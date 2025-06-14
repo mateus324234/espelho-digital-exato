@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
+import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 
 const TABS = [
   { label: "Pessoa Física", value: "fisica" },
@@ -192,13 +193,12 @@ const Index = () => {
       <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
         <div className="max-w-md w-full mx-auto">
           <img
-            src="https://www.cresol.com.br/img/logo-green.svg"
+            src={cresolLogo}
             alt="Cresol"
             className="h-8 mb-8"
-            style={{ filter: "brightness(0) saturate(100%) invert(16%) sepia(88%) saturate(453%) hue-rotate(112deg) brightness(93%) contrast(91%)" }}
           />
-          <h1 className="text-2xl font-semibold text-[#145C36] mb-3">Bem-vindo</h1>
-          <p className="text-[1rem] text-gray-600 mb-8">
+          <h1 className="text-2xl font-semibold text-gray-600 mb-3">Seja bem-vindo</h1>
+          <p className="text-[1.1rem] text-gray-600 mb-8">
             Acesse sua conta e realize suas transações de forma rápida e segura a qualquer hora.
           </p>
           {/* Tabs */}
