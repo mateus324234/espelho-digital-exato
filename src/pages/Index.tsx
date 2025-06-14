@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
@@ -192,13 +191,20 @@ const Index = () => {
       {/* Left: Formulário */}
       <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
         <div className="max-w-md w-full mx-auto">
-          <img
-            src={cresolLogo}
-            alt="Cresol"
-            className="h-8 mb-8"
-          />
-          <h1 className="text-2xl font-semibold text-gray-600 mb-3">Seja bem-vindo</h1>
-          <p className="text-[1.1rem] text-gray-600 mb-8">
+          {/* Logo centralizada e maior */}
+          <div className="flex justify-center mb-8">
+            <img
+              src={cresolLogo}
+              alt="Cresol"
+              className="h-16" // altura aumentada
+              style={{ maxWidth: "270px", width: "100%" }} // largura máxima, responsivo
+            />
+          </div>
+          {/* "Seja bem-vindo" 2x maior */}
+          <h1 className="text-4xl font-semibold text-gray-600 mb-3 text-center">
+            Seja bem-vindo
+          </h1>
+          <p className="text-[1.1rem] text-gray-600 mb-8 text-center">
             Acesse sua conta e realize suas transações de forma rápida e segura a qualquer hora.
           </p>
           {/* Tabs */}
