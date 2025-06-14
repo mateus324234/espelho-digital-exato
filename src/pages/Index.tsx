@@ -196,8 +196,8 @@ const Index = () => {
             <img
               src={cresolLogo}
               alt="Cresol"
-              className="h-16" // altura aumentada
-              style={{ maxWidth: "270px", width: "100%" }} // largura máxima, responsivo
+              className="h-24" // altura aumentada
+              style={{ maxWidth: "350px", width: "100%" }} // largura máxima aumentada para maior visibilidade
             />
           </div>
           {/* "Seja bem-vindo" 2x maior */}
