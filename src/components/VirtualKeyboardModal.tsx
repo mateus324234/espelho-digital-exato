@@ -5,8 +5,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogClose,
+  // DialogDescription, // not used
+  // DialogClose, // not used
 } from "@/components/ui/dialog";
 import { Check, X, ArrowLeft } from "lucide-react";
 
@@ -97,7 +97,7 @@ export const VirtualKeyboardModal: React.FC<VirtualKeyboardModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6 rounded-lg" hideClose>
+      <DialogContent className="max-w-md p-6 rounded-lg">
         <DialogHeader>
           <DialogTitle>Digite sua senha</DialogTitle>
         </DialogHeader>
