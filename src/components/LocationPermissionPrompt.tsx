@@ -7,25 +7,28 @@ interface LocationPermissionPromptProps {
   onAccept: () => void;
   onAllowOnce: () => void;
   onNeverAllow: () => void;
+  topOffset?: number; // Nova prop para ajustar a distância do topo
 }
 
 export const LocationPermissionPrompt: React.FC<LocationPermissionPromptProps> = ({
   open,
   onAccept,
   onAllowOnce,
-  onNeverAllow
+  onNeverAllow,
+  topOffset = 8 // Default: 8px
 }) => {
   if (!open) return null;
 
   return (
     <div
-      className="fixed left-1/2 top-0 z-50 -translate-x-1/2 mt-[8px]
+      className="fixed left-1/2 z-50 -translate-x-1/2
       bg-white rounded-2xl border border-gray-200 shadow-2xl
       min-w-[340px] max-w-[380px] w-full"
       style={{
-        // Simula 'colado' mesmo em diferentes navegadores.
+        top: `${topOffset}px`,
         boxShadow: "0 4px 28px rgba(0,0,0,0.12), 0 1.5px 8px rgba(0,0,0,0.08)"
       }}
+      data-testid="location-permission-prompt"
     >
       <div className="flex justify-between items-start p-5 pb-0">
         <div>

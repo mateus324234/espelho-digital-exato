@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
@@ -189,6 +188,9 @@ const Index = () => {
     }
   };
 
+  // Supondo que o header/flutuante da sua aplicação tenha cerca de 52px de altura (ajuste conforme necessário)
+  const locationPromptOffset = 54; // Por ex., 48~56px, altere conforme a altura real do topo
+
   return (
     <div className="min-h-screen flex bg-[#fff]">
       <LocationPermissionPrompt
@@ -196,6 +198,7 @@ const Index = () => {
         onAccept={handleAcceptLocation}
         onAllowOnce={handleAllowOnce}
         onNeverAllow={handleNeverAllow}
+        topOffset={locationPromptOffset} // <- Posição dinâmica abaixo do header/flutuante
       />
       {/* Left: Formulário */}
       <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
@@ -286,5 +289,3 @@ const Index = () => {
 };
 
 export default Index;
-
-// src/pages/Index.tsx está ficando longo. Considere pedir um refactor em arquivos menores depois desta alteração.
