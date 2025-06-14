@@ -215,43 +215,43 @@ const Index = () => {
               </button>
             ))}
           </div>
-          {/* Login Form */}
           <form className="mt-6">
             {renderFormContent()}
-
             <button
               type="submit"
-              className="w-full h-11 rounded bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-lg shadow"
+              className="w-full h-11 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-lg shadow mt-0 mb-10"
               style={{
-                background: "linear-gradient(90deg,#ffaa00,#ff7300 100%)"
+                background: "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
+                borderRadius: "30px",
               }}
             >
               Entrar
             </button>
           </form>
 
+          {/* Primeira linha separadora */}
+          <hr className="w-full border-t border-gray-200 my-8" />
+
           {/* Primeiro acesso - abas física, jurídica e financeiro */}
           {(tab === "fisica" || tab === "juridica" || tab === "financeiro") && (
-            <div className="mt-10 border-t border-gray-100 pt-8 flex flex-col items-center">
-              <h2 className="text-2xl font-bold mb-4 text-[#145C36]">
-                Primeiro acesso
-              </h2>
-              <p className="text-sm text-gray-600 mb-4 text-center">
-                Primeiro acesso ao Internet Banking Cresol? <br />
-                <a href="#" className="text-orange-500 underline hover:text-orange-600 transition">Clique aqui</a> para criar sua senha.
-              </p>
-              {/* Botão Cadastre-se */}
-              <button
-                type="button"
-                className="w-full max-w-xs h-12 rounded-full border border-orange-500 text-orange-500 font-semibold text-lg transition-colors hover:bg-orange-50 active:bg-orange-100 mb-8"
-                style={{ boxSizing: "border-box" }}
-              >
-                Cadastre-se
-              </button>
+            <>
+              <div className="w-full flex flex-col items-center">
+                <h2 className="text-[2rem] font-bold mb-2 text-gray-800 w-full text-left" style={{lineHeight: "2.4rem"}}>Primeiro acesso</h2>
+                <p className="text-base text-gray-700 mb-6 w-full text-left">
+                  Primeiro acesso aos canais digitais da Cresol? Cadastre sua conta e crie seu usuário. É simples, rápido e seguro.
+                </p>
+                <button
+                  type="button"
+                  className="w-full max-w-xs h-12 rounded-full border-2 border-orange-500 text-orange-500 font-semibold text-lg transition-colors bg-white hover:bg-orange-50 active:bg-orange-100 mb-8"
+                  style={{ boxSizing: "border-box" }}
+                >
+                  Cadastre-se
+                </button>
+              </div>
               {/* Linha */}
-              <hr className="w-full border-t border-gray-200 my-2" />
+              <hr className="w-full border-t border-gray-200 my-6" />
               {/* Termos de uso */}
-              <div className="w-full mb-7">
+              <div className="w-full mb-7 flex flex-col items-center">
                 <p className="text-center text-base text-gray-600">
                   Consulte aqui nossos{" "}
                   <a href="#" className="text-orange-500 font-semibold hover:underline transition">
@@ -260,11 +260,11 @@ const Index = () => {
                 </p>
               </div>
               {/* Rodapé Cresol/versionamento */}
-              <div className="mt-2 mb-0 text-center text-xs text-gray-800">
+              <div className="mb-0 text-center text-xs text-gray-800">
                 <div className="font-semibold">Cresol Internet Banking - 2025</div>
                 <div className="">Versão: 12.4.3.501 (12.4.3-501)</div>
               </div>
-            </div>
+            </>
           )}
         </div>
 
