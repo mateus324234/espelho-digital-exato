@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 
 const TABS = [
@@ -19,7 +19,7 @@ const Index = () => {
   return (
     <div className="min-h-screen flex bg-[#fff]">
       {/* Left: Formulário */}
-      <div className="w-1/2 flex flex-col justify-center px-[7%] py-12">
+      <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
         <div className="max-w-md w-full mx-auto">
           <img
             src="https://www.cresol.com.br/img/logo-green.svg"
@@ -119,21 +119,22 @@ const Index = () => {
             </p>
           </div>
         </div>
+        
+        {/* Help Icon */}
+        <div className="absolute bottom-8 left-8">
+          <button className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white hover:bg-orange-600 transition-colors shadow-lg">
+            <HelpCircle size={24} />
+          </button>
+        </div>
       </div>
+      
       {/* Right: Imagem da mulher */}
-      <div className="w-1/2 hidden lg:flex items-center justify-center bg-[#f5f6f7] relative overflow-hidden">
+      <div className="w-1/2 hidden lg:block bg-[#f5f6f7] relative overflow-hidden">
         <img
           src={womanImage}
           alt="Mulher segurando celular"
-          className="object-contain max-h-[90vh] w-auto"
-          style={{
-            minHeight: 0,
-            minWidth: 0,
-            maxWidth: "95%",
-            filter: "drop-shadow(0 2px 40px rgba(0,0,0,0.13))",
-          }}
+          className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 pointer-events-none" />
       </div>
     </div>
   );
