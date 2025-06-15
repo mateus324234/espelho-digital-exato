@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +29,7 @@ const Index = () => {
   const [cnpj, setCnpj] = useState("");
   const [chaveMulticanal, setChaveMulticanal] = useState("");
   const [senha, setSenha] = useState("");
-  const [showSenha, setShowSenha] useState(false);
+  const [showSenha, setShowSenha] = useState(false);
   const [saveCpf, setSaveCpf] = useState(false);
   const [saveCnpj, setSaveCnpj] = useState(false);
   const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
