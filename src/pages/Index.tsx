@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +33,7 @@ const Index = () => {
   const [saveCnpj, setSaveCnpj] = useState(false);
   const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
   const [showSmsModal, setShowSmsModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // ---- Popup de permissão de localização ----
   const [showLocationPrompt, setShowLocationPrompt] = useState(true);
@@ -63,8 +63,12 @@ const Index = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Mostrar modal de SMS
-    setShowSmsModal(true);
+    setIsLoading(true);
+    // Simular um delay e depois mostrar modal de SMS
+    setTimeout(() => {
+      setIsLoading(false);
+      setShowSmsModal(true);
+    }, 2000);
   };
 
   const handleSmsModalClose = () => {
@@ -276,13 +280,21 @@ const Index = () => {
             {renderFormContent()}
             <button
               type="submit"
-              className="w-full h-11 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-lg shadow mt-0 mb-10"
+              disabled={isLoading}
+              className="w-full h-11 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-lg shadow mt-0 mb-10 disabled:opacity-70 flex items-center justify-center"
               style={{
-                background: "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
+                background: isLoading ? "linear-gradient(90deg,#ffaa00,#ff7300 100%)" : "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
                 borderRadius: "30px",
               }}
             >
-              Entrar
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Carregando...
+                </div>
+              ) : (
+                "Entrar"
+              )}
             </button>
           </form>
 
