@@ -23,7 +23,7 @@ const TokenPage = () => {
   return (
     <div className="min-h-screen flex bg-[#fff]">
       {/* Left: Formulário Token */}
-      <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
+      <div className="w-1/2 flex flex-col justify-start px-[7%] pt-4 pb-8 relative">
         <div className="max-w-md w-full mx-auto">
           {/* Botão Voltar */}
           <button
@@ -37,7 +37,7 @@ const TokenPage = () => {
           <img
             src={cresolLogo}
             alt="Cresol"
-            className="h-8 mb-8"
+            className="h-8 mb-6"
           />
 
           <h1 className="text-2xl font-semibold text-gray-600 mb-3">Token de Acesso</h1>
@@ -50,7 +50,7 @@ const TokenPage = () => {
               <label className="block text-sm text-gray-700 font-medium mb-1">Token</label>
               <input
                 type="text"
-                className="w-full h-11 px-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-white text-center text-lg tracking-widest"
+                className="w-full h-11 px-3 border border-gray-300 rounded focus:outline-none transition text-base bg-white text-center text-lg tracking-widest"
                 placeholder="000000"
                 value={token}
                 onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
