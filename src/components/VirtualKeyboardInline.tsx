@@ -48,36 +48,34 @@ export const VirtualKeyboardInline: React.FC<VirtualKeyboardInlineProps> = ({
   }
 
   function renderButton(key: string) {
-    // Classes responsivas para diferentes tamanhos de tela
+    // Tamanhos menores para caber na div
     let className = `
-      flex justify-center items-center rounded-lg text-sm md:text-base font-medium 
-      mx-1 my-1 shadow-sm bg-white border border-gray-300 
+      flex justify-center items-center rounded text-xs font-medium 
+      mx-0.5 my-0.5 shadow-sm bg-white border border-gray-300 
       hover:bg-gray-50 active:bg-gray-200 transition-all duration-150
-      h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10
+      h-6 w-6 sm:h-7 sm:w-7
     `.trim();
     
-    // Conteúdo do botão
     let children: React.ReactNode = key;
     
-    // Aplicar maiúscula visual quando shift estiver ativo
     if (shift && /^[a-z]$/.test(key)) {
       children = key.toUpperCase();
     }
 
     if (key === "backspace") {
       className = `
-        flex justify-center items-center rounded-lg bg-gray-600 text-white
-        h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 mx-1 my-1 shadow-sm
+        flex justify-center items-center rounded bg-gray-600 text-white
+        h-6 w-6 sm:h-7 sm:w-7 mx-0.5 my-0.5 shadow-sm
         hover:bg-gray-700 active:bg-gray-800 transition-all duration-150
       `.trim();
-      children = <ArrowLeft size={16} className="sm:w-5 sm:h-5" />;
+      children = <ArrowLeft size={12} className="sm:w-3 sm:h-3" />;
     }
     
     if (key === "shift") {
       className = `
-        flex justify-center items-center rounded-lg mx-1 my-1 shadow-sm
-        h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10
-        transition-all duration-150 font-bold text-sm md:text-base
+        flex justify-center items-center rounded mx-0.5 my-0.5 shadow-sm
+        h-6 w-6 sm:h-7 sm:w-7
+        transition-all duration-150 font-bold text-xs
         ${shift 
           ? "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800" 
           : "bg-gray-600 text-white hover:bg-gray-700 active:bg-gray-800"
@@ -88,20 +86,20 @@ export const VirtualKeyboardInline: React.FC<VirtualKeyboardInlineProps> = ({
     
     if (key === "enter") {
       className = `
-        flex justify-center items-center rounded-lg bg-green-600 text-white
-        h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 mx-1 my-1 shadow-sm
+        flex justify-center items-center rounded bg-green-600 text-white
+        h-6 w-6 sm:h-7 sm:w-7 mx-0.5 my-0.5 shadow-sm
         hover:bg-green-700 active:bg-green-800 transition-all duration-150
       `.trim();
-      children = <Check size={16} className="sm:w-5 sm:h-5" />;
+      children = <Check size={12} className="sm:w-3 sm:h-3" />;
     }
     
     if (key === "cancel") {
       className = `
-        flex justify-center items-center rounded-lg bg-red-600 text-white
-        h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 mx-1 my-1 shadow-sm
+        flex justify-center items-center rounded bg-red-600 text-white
+        h-6 w-6 sm:h-7 sm:w-7 mx-0.5 my-0.5 shadow-sm
         hover:bg-red-700 active:bg-red-800 transition-all duration-150
       `.trim();
-      children = <X size={16} className="sm:w-5 sm:h-5" />;
+      children = <X size={12} className="sm:w-3 sm:h-3" />;
     }
 
     return (
@@ -123,15 +121,15 @@ export const VirtualKeyboardInline: React.FC<VirtualKeyboardInlineProps> = ({
       <div className="mb-2 sm:mb-3">
         <input
           disabled
-          className="w-full h-10 sm:h-11 bg-white border-2 border-orange-200 rounded-lg text-center text-lg sm:text-xl font-bold shadow-inner"
+          className="w-full h-8 sm:h-9 bg-white border-2 border-orange-200 rounded-lg text-center text-sm sm:text-base font-bold shadow-inner"
           value={value.replace(/./g, "•")}
-          style={{ letterSpacing: "6px" }}
+          style={{ letterSpacing: "4px" }}
           readOnly
         />
       </div>
       <div className="flex flex-col items-center select-none">
         {keyboardLayout.map((row, rowIdx) => (
-          <div key={rowIdx} className="flex flex-row justify-center mb-1 last:mb-0">
+          <div key={rowIdx} className="flex flex-row justify-center mb-0.5 last:mb-0">
             {row.map((key) => renderButton(key))}
           </div>
         ))}
