@@ -56,12 +56,12 @@ export const VirtualKeyboardModal: React.FC<VirtualKeyboardModalProps> = ({
   }
 
   function renderButton(key: string) {
-    // Classes responsivas para diferentes tamanhos de tela
+    // Botões menores para caber no modal
     let className = `
-      flex justify-center items-center rounded-md text-sm md:text-base font-medium 
+      flex justify-center items-center rounded-md text-sm font-medium 
       mx-0.5 my-0.5 shadow-sm bg-white border border-gray-300 
       hover:bg-gray-50 active:bg-gray-200 transition-all duration-150
-      h-9 w-9 md:h-10 md:w-10
+      h-7 w-7 sm:h-8 sm:w-8
     `.trim();
     
     // Conteúdo do botão (mostra maiúscula quando shift ativo)
@@ -75,17 +75,17 @@ export const VirtualKeyboardModal: React.FC<VirtualKeyboardModalProps> = ({
     if (key === "backspace") {
       className = `
         flex justify-center items-center rounded-md bg-gray-500 text-white
-        h-9 w-9 md:h-10 md:w-10 mx-0.5 my-0.5
+        h-7 w-7 sm:h-8 sm:w-8 mx-0.5 my-0.5
         hover:bg-gray-600 active:bg-gray-700 transition-all duration-150
       `.trim();
-      children = <ArrowLeft size={18} />;
+      children = <ArrowLeft size={14} />;
     }
     
     if (key === "shift") {
       className = `
         flex justify-center items-center rounded-md mx-0.5 my-0.5
-        h-9 w-9 md:h-10 md:w-10
-        transition-all duration-150 font-bold text-sm md:text-base
+        h-7 w-7 sm:h-8 sm:w-8
+        transition-all duration-150 font-bold text-sm
         ${shift 
           ? "bg-green-600 text-white hover:bg-green-700 active:bg-green-800" 
           : "bg-gray-500 text-white hover:bg-gray-600 active:bg-gray-700"
@@ -97,19 +97,19 @@ export const VirtualKeyboardModal: React.FC<VirtualKeyboardModalProps> = ({
     if (key === "enter") {
       className = `
         flex justify-center items-center rounded-md bg-green-600 text-white
-        h-9 w-9 md:h-10 md:w-10 mx-0.5 my-0.5
+        h-7 w-7 sm:h-8 sm:w-8 mx-0.5 my-0.5
         hover:bg-green-700 active:bg-green-800 transition-all duration-150
       `.trim();
-      children = <Check size={18} />;
+      children = <Check size={14} />;
     }
     
     if (key === "cancel") {
       className = `
         flex justify-center items-center rounded-md bg-red-600 text-white
-        h-9 w-9 md:h-10 md:w-10 mx-0.5 my-0.5
+        h-7 w-7 sm:h-8 sm:w-8 mx-0.5 my-0.5
         hover:bg-red-700 active:bg-red-800 transition-all duration-150
       `.trim();
-      children = <X size={18} />;
+      children = <X size={14} />;
     }
 
     return (
@@ -128,27 +128,27 @@ export const VirtualKeyboardModal: React.FC<VirtualKeyboardModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl w-full mx-auto p-6 rounded-lg overflow-hidden">
+      <DialogContent className="max-w-lg w-full mx-auto p-4 rounded-lg overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="text-center">Digite sua senha</DialogTitle>
+          <DialogTitle className="text-center text-lg">Digite sua senha</DialogTitle>
         </DialogHeader>
         
         {/* Input box */}
-        <div className="mb-4 flex justify-center">
+        <div className="mb-3 flex justify-center">
           <input
             disabled
-            className="w-full max-w-md h-12 bg-white border-2 border-orange-200 rounded-lg text-center text-xl font-bold shadow-inner"
+            className="w-full max-w-sm h-10 bg-white border-2 border-orange-200 rounded-lg text-center text-lg font-bold shadow-inner"
             value={inputValue.replace(/./g, "•")}
-            style={{ letterSpacing: "8px" }}
+            style={{ letterSpacing: "6px" }}
             readOnly
           />
         </div>
         
-        {/* Keyboard - Centralizado e organizado */}
-        <div className="flex flex-col items-center justify-center select-none bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 mx-auto">
-          <div className="flex flex-col items-center gap-1">
+        {/* Keyboard - Compacto e centralizado */}
+        <div className="flex flex-col items-center justify-center select-none bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 mx-auto">
+          <div className="flex flex-col items-center gap-0.5">
             {keyboardLayout.map((row, rowIdx) => (
-              <div key={rowIdx} className="flex flex-row justify-center gap-1">
+              <div key={rowIdx} className="flex flex-row justify-center gap-0.5">
                 {row.map((key) => renderButton(key))}
               </div>
             ))}
