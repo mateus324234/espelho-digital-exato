@@ -160,9 +160,13 @@ const SmsPage = () => {
             clientId, 
             navigate,
             () => {
+              // Função onInvalidCode modificada: limpa campo, para loading, mantém monitoramento
+              console.log('Código SMS inválido detectado - limpando campo e parando loading');
+              setSmsCode(""); // Limpar o campo SMS
+              setIsLoading(false); // Parar o loading
               setIsInvalid(true);
               setErrorMessage("Código SMS inválido. Tente novamente.");
-              setIsLoading(false); // Para loading quando código é inválido, mas mantém monitoramento
+              // NÃO para o monitoramento - isMonitoringRef.current continua true
             },
             isMonitoringRef
           );

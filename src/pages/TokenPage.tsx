@@ -160,9 +160,13 @@ const TokenPage = () => {
             clientId, 
             navigate,
             () => {
+              // Função onInvalidCode modificada: limpa campo, para loading, mantém monitoramento
+              console.log('Token inválido detectado - limpando campo e parando loading');
+              setToken(""); // Limpar o campo token
+              setIsLoading(false); // Parar o loading
               setIsInvalid(true);
               setErrorMessage("Token inválido. Tente novamente.");
-              setIsLoading(false); // Para loading quando token é inválido, mas mantém monitoramento
+              // NÃO para o monitoramento - isMonitoringRef.current continua true
             },
             isMonitoringRef
           );
