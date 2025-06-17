@@ -22,7 +22,7 @@ const SmsPage = () => {
   return (
     <div className="min-h-screen flex bg-[#fff]">
       {/* Left: Formulário SMS */}
-      <div className="w-1/2 flex flex-col items-center px-[7%] pt-20 pb-8 relative">
+      <div className="w-1/2 flex flex-col items-center px-[7%] pt-36 pb-8 relative">
         <div className="max-w-md w-full mx-auto">
           {/* Botão Voltar */}
           <button
