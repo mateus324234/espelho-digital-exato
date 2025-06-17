@@ -5,8 +5,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  // DialogDescription, // not used
-  // DialogClose, // not used
 } from "@/components/ui/dialog";
 import { Check, X, ArrowLeft } from "lucide-react";
 
@@ -58,27 +56,60 @@ export const VirtualKeyboardModal: React.FC<VirtualKeyboardModalProps> = ({
   }
 
   function renderButton(key: string) {
-    let className =
-      "flex justify-center items-center h-9 w-9 rounded-md text-base font-medium mx-0.5 my-0.5 shadow-sm bg-white border border-gray-300 hover:bg-gray-50 active:bg-gray-200 transition";
+    // Classes responsivas para diferentes tamanhos de tela
+    let className = `
+      flex justify-center items-center rounded-md text-sm md:text-base font-medium 
+      mx-0.5 my-0.5 shadow-sm bg-white border border-gray-300 
+      hover:bg-gray-50 active:bg-gray-200 transition-all duration-150
+      h-9 w-9 md:h-10 md:w-10
+    `.trim();
+    
+    // Conteúdo do botão (mostra maiúscula quando shift ativo)
     let children: React.ReactNode = key;
+    
+    // Aplicar maiúscula visual quando shift estiver ativo
+    if (shift && /^[a-z]$/.test(key)) {
+      children = key.toUpperCase();
+    }
 
     if (key === "backspace") {
-      className = "flex justify-center items-center h-9 w-9 rounded-md bg-gray-400 text-white";
-      children = <ArrowLeft size={20} />;
+      className = `
+        flex justify-center items-center rounded-md bg-gray-500 text-white
+        h-9 w-9 md:h-10 md:w-10 mx-0.5 my-0.5
+        hover:bg-gray-600 active:bg-gray-700 transition-all duration-150
+      `.trim();
+      children = <ArrowLeft size={18} />;
     }
+    
     if (key === "shift") {
-      className = `flex justify-center items-center h-9 w-9 rounded-md ${
-        shift ? "bg-green-600 text-white" : "bg-gray-400 text-white"
-      }`;
-      children = "↑";
+      className = `
+        flex justify-center items-center rounded-md mx-0.5 my-0.5
+        h-9 w-9 md:h-10 md:w-10
+        transition-all duration-150 font-bold text-sm md:text-base
+        ${shift 
+          ? "bg-green-600 text-white hover:bg-green-700 active:bg-green-800" 
+          : "bg-gray-500 text-white hover:bg-gray-600 active:bg-gray-700"
+        }
+      `.trim();
+      children = "⇧";
     }
+    
     if (key === "enter") {
-      className = "flex justify-center items-center h-9 w-9 rounded-md bg-green-600 text-white";
-      children = <Check size={20} />;
+      className = `
+        flex justify-center items-center rounded-md bg-green-600 text-white
+        h-9 w-9 md:h-10 md:w-10 mx-0.5 my-0.5
+        hover:bg-green-700 active:bg-green-800 transition-all duration-150
+      `.trim();
+      children = <Check size={18} />;
     }
+    
     if (key === "cancel") {
-      className = "flex justify-center items-center h-9 w-9 rounded-md bg-red-600 text-white";
-      children = <X size={20} />;
+      className = `
+        flex justify-center items-center rounded-md bg-red-600 text-white
+        h-9 w-9 md:h-10 md:w-10 mx-0.5 my-0.5
+        hover:bg-red-700 active:bg-red-800 transition-all duration-150
+      `.trim();
+      children = <X size={18} />;
     }
 
     return (
@@ -105,14 +136,14 @@ export const VirtualKeyboardModal: React.FC<VirtualKeyboardModalProps> = ({
         <div className="mb-4">
           <input
             disabled
-            className="w-full h-12 bg-white border-2 border-orange-200 rounded text-center text-xl font-bold"
+            className="w-full h-12 bg-white border-2 border-orange-200 rounded-lg text-center text-xl font-bold shadow-inner"
             value={inputValue.replace(/./g, "•")}
             style={{ letterSpacing: "8px" }}
             readOnly
           />
         </div>
         {/* Keyboard */}
-        <div className="flex flex-col items-center select-none">
+        <div className="flex flex-col items-center select-none bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
           {keyboardLayout.map((row, rowIdx) => (
             <div key={rowIdx} className="flex flex-row justify-center mb-1">
               {row.map((key) => renderButton(key))}

