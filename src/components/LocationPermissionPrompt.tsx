@@ -21,9 +21,9 @@ export const LocationPermissionPrompt: React.FC<LocationPermissionPromptProps> =
 
   return (
     <div
-      className="fixed left-1/2 z-50 -translate-x-1/2
+      className="fixed left-4 z-50
       bg-white rounded-2xl border border-gray-200 shadow-2xl
-      min-w-[340px] max-w-[380px] w-full"
+      min-w-[340px] max-w-[380px] w-full sm:w-auto"
       style={{
         top: `${topOffset}px`,
         boxShadow: "0 4px 28px rgba(0,0,0,0.12), 0 1.5px 8px rgba(0,0,0,0.08)"

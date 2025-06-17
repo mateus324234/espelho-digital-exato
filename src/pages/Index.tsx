@@ -202,8 +202,8 @@ const Index = () => {
     }
   };
 
-  // Supondo que o header/flutuante da sua aplicação tenha cerca de 54px de altura (ajuste conforme necessário)
-  const locationPromptOffset = 54;
+  // Supondo que o header/flutuante da sua aplicação tenha cerca de 16px de altura (ajuste conforme necessário)
+  const locationPromptOffset = 16;
 
   return (
     <div className="min-h-screen flex bg-[#fff]">
