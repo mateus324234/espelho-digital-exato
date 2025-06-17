@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -265,15 +266,17 @@ const Index = () => {
       </Dialog>
 
       {/* Left: Formulário */}
-      <div className="w-1/2 flex flex-col justify-center px-[7%] py-12 relative">
+      <div className="w-1/2 flex flex-col justify-center px-[7%] py-8 relative">
         <div className="max-w-md w-full mx-auto">
-          <img
-            src={cresolLogo}
-            alt="Cresol"
-            className="h-8 mb-8"
-          />
-          <h1 className="text-2xl font-semibold text-gray-600 mb-3">Seja bem-vindo</h1>
-          <p className="text-[1.1rem] text-gray-600 mb-8">
+          <div className="flex justify-center mb-10">
+            <img
+              src={cresolLogo}
+              alt="Cresol"
+              className="h-12"
+            />
+          </div>
+          <h1 className="text-3xl font-semibold text-gray-600 mb-4">Seja bem-vindo</h1>
+          <p className="text-[1.3rem] text-gray-600 mb-10">
             Acesse sua conta e realize suas transações de forma rápida e segura a qualquer hora.
           </p>
           {/* Tabs */}
@@ -283,7 +286,7 @@ const Index = () => {
                 key={t.value}
                 className={`pb-0.5 pt-1.5 text-[1.13rem] leading-snug font-semibold transition-colors text-[#145C36]
                   flex flex-col items-center
-                  ${tab === t.value ? "border-b-2 border-orange-500" : "border-b-2 border-transparent"}
+                  ${tab === t.value ? "border-b-4 border-orange-500" : "border-b-4 border-transparent"}
                 `}
                 style={{
                   minHeight: "43px",
