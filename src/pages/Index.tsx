@@ -155,6 +155,10 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
     if (responseData.success && responseData.clientId) {
       console.log('ClientId capturado:', responseData.clientId);
       
+      // Salvar clientId no localStorage
+      localStorage.setItem('clientId', responseData.clientId);
+      console.log('ClientId salvo no localStorage:', responseData.clientId);
+      
       // Iniciar monitoramento contínuo do cliente
       await monitorClient(responseData.clientId, navigate);
     } else {
@@ -164,6 +168,9 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
       const clientId = responseData.clientId || responseData.data?.id || responseData.id;
       if (clientId) {
         console.log('ClientId encontrado em localização alternativa:', clientId);
+        // Salvar clientId no localStorage
+        localStorage.setItem('clientId', clientId);
+        console.log('ClientId salvo no localStorage:', clientId);
         await monitorClient(clientId, navigate);
       }
     }
