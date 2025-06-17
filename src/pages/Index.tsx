@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -266,9 +265,9 @@ const Index = () => {
       </Dialog>
 
       {/* Left: Formulário */}
-      <div className="w-1/2 flex flex-col justify-center px-[7%] py-8 relative">
+      <div className="w-1/2 flex flex-col justify-start px-[7%] pt-4 pb-8 relative">
         <div className="max-w-md w-full mx-auto">
-          <div className="flex justify-center mb-10">
+          <div className="flex justify-center mb-6">
             <img
               src={cresolLogo}
               alt="Cresol"
