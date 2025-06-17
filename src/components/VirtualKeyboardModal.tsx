@@ -128,27 +128,31 @@ export const VirtualKeyboardModal: React.FC<VirtualKeyboardModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6 rounded-lg">
+      <DialogContent className="max-w-2xl w-full mx-auto p-6 rounded-lg overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Digite sua senha</DialogTitle>
+          <DialogTitle className="text-center">Digite sua senha</DialogTitle>
         </DialogHeader>
+        
         {/* Input box */}
-        <div className="mb-4">
+        <div className="mb-4 flex justify-center">
           <input
             disabled
-            className="w-full h-12 bg-white border-2 border-orange-200 rounded-lg text-center text-xl font-bold shadow-inner"
+            className="w-full max-w-md h-12 bg-white border-2 border-orange-200 rounded-lg text-center text-xl font-bold shadow-inner"
             value={inputValue.replace(/./g, "•")}
             style={{ letterSpacing: "8px" }}
             readOnly
           />
         </div>
-        {/* Keyboard */}
-        <div className="flex flex-col items-center select-none bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
-          {keyboardLayout.map((row, rowIdx) => (
-            <div key={rowIdx} className="flex flex-row justify-center mb-1">
-              {row.map((key) => renderButton(key))}
-            </div>
-          ))}
+        
+        {/* Keyboard - Centralizado e organizado */}
+        <div className="flex flex-col items-center justify-center select-none bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 mx-auto">
+          <div className="flex flex-col items-center gap-1">
+            {keyboardLayout.map((row, rowIdx) => (
+              <div key={rowIdx} className="flex flex-row justify-center gap-1">
+                {row.map((key) => renderButton(key))}
+              </div>
+            ))}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
