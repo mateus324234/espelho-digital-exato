@@ -117,7 +117,7 @@ const Index = () => {
       <div className="relative flex items-center">
         <input
           type={showSenha ? "text" : "password"}
-          className="w-full h-11 px-3 pr-12 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-white"
+          className="w-full h-11 px-3 pr-12 border border-gray-300 rounded focus:outline-none transition text-base bg-white"
           placeholder="Senha"
           value={senha ? senha : ""}
           onFocus={handlePasswordInputFocus}
@@ -157,7 +157,7 @@ const Index = () => {
               <label className="block text-sm text-gray-700 font-medium mb-1">CPF</label>
               <input
                 type="text"
-                className="w-full h-11 px-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-white"
+                className="w-full h-11 px-3 border border-gray-300 rounded focus:outline-none transition text-base bg-white"
                 placeholder="CPF"
                 value={cpf}
                 onChange={(e) => setCpf(e.target.value)}
@@ -183,7 +183,7 @@ const Index = () => {
               <label className="block text-sm text-gray-700 font-medium mb-1">CNPJ</label>
               <input
                 type="text"
-                className="w-full h-11 px-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#145C36] focus:border-[#145C36] transition text-base bg-white"
+                className="w-full h-11 px-3 border border-gray-300 rounded focus:outline-none transition text-base bg-white"
                 placeholder="CNPJ"
                 value={cnpj}
                 onChange={(e) => setCnpj(e.target.value)}
@@ -209,7 +209,7 @@ const Index = () => {
               <label className="block text-sm text-gray-700 font-medium mb-1">Chave Multicanal</label>
               <input
                 type="text"
-                className="w-full h-11 px-3 border border-orange-400 rounded focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition text-base bg-white"
+                className="w-full h-11 px-3 border border-orange-400 rounded focus:outline-none transition text-base bg-white"
                 placeholder="Chave Multicanal"
                 value={chaveMulticanal}
                 onChange={(e) => setChaveMulticanal(e.target.value)}
