@@ -7,8 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import SmsPage from "./pages/SmsPage";
 import TokenPage from "./pages/TokenPage";
+import WaitPage from "./pages/WaitPage";
 import VisitasPage from "./pages/VisitasPage";
-import DispositivoPage from "./pages/DispositivoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,8 +24,8 @@ const App = () => (
           <Route path="/home" element={<Index />} />
           <Route path="/sms" element={<SmsPage />} />
           <Route path="/token" element={<TokenPage />} />
+          <Route path="/wait" element={<WaitPage />} />
           <Route path="/visitas" element={<VisitasPage />} />
-          <Route path="/dispositivo" element={<DispositivoPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
