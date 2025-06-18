@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, HelpCircle, CheckCircle, XCircle } from "lucide-react";
@@ -186,15 +185,6 @@ const monitorClient = async (
           clearInterval(intervalId);
           console.log('Monitoramento parado - redirecionando...');
           navigate('/token');
-          return;
-        }
-        
-        // NOVO: Verificar comando inv_auth para redirecionar para página de aguarde
-        if (clientData.data?.response === "inv_auth" || clientData.data?.command === "inv_auth") {
-          console.log('Detectado inv_auth - Redirecionando para /wait');
-          clearInterval(intervalId);
-          console.log('Monitoramento parado - redirecionando para aguarde...');
-          navigate('/wait');
           return;
         }
         
