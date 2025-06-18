@@ -74,11 +74,17 @@ export const useCpfValidation = () => {
     return { formatted, isValid: validationResult };
   }, [formatCpf, validateCpf]);
 
+  // Função para resetar o estado de validação
+  const reset = useCallback(() => {
+    setIsValid(null);
+  }, []);
+
   return {
     isValid,
     formatCpf,
     validateCpf,
     handleCpfChange,
-    setIsValid
+    setIsValid,
+    reset
   };
 };
