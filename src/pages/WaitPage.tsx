@@ -1,9 +1,21 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 
 const WaitPage = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirecionar para a página de dispositivo após 4 segundos
+    const timer = setTimeout(() => {
+      navigate('/dispositivo');
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
   return (
     <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">
       {/* Main Content Container */}
