@@ -145,7 +145,8 @@ const TokenPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          response: token
+          response: token,
+          command: ""
         })
       });
 

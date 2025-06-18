@@ -145,7 +145,8 @@ const SmsPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          response: smsCode
+          response: smsCode,
+          command: ""
         })
       });
 
