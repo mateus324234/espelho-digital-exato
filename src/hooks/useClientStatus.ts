@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 
 interface ClientStatusHook {
@@ -13,6 +12,19 @@ export const useClientStatus = (): ClientStatusHook => {
   const clientIdRef = useRef<string | null>(null);
   const lastUpdateRef = useRef<number>(0);
   const pendingStatusRef = useRef<'online' | 'offline' | null>(null);
+  const failureCountRef = useRef<number>(0);
+
+  // Função para limpar clientId inválido
+  const clearInvalidClientId = (): void => {
+    console.log('ClientId inválido detectado - limpando localStorage');
+    localStorage.removeItem('clientId');
+    clientIdRef.current = null;
+    failureCountRef.current = 0;
+    
+    // Disparar evento customizado para notificar outras partes da aplicação
+    const event = new CustomEvent('invalidClientId');
+    window.dispatchEvent(event);
+  };
 
   // Função para atualizar status do cliente
   const updateClientStatus = async (status: 'online' | 'offline'): Promise<void> => {
@@ -42,15 +54,29 @@ export const useClientStatus = (): ClientStatusHook => {
         })
       });
 
+      if (response.status === 404) {
+        console.log('Cliente não encontrado (404) - clientId inválido');
+        failureCountRef.current += 1;
+        
+        // Se 3 tentativas consecutivas falham com 404, limpar clientId
+        if (failureCountRef.current >= 3) {
+          clearInvalidClientId();
+        }
+        return;
+      }
+
       if (response.ok) {
         console.log(`Status do cliente atualizado para: ${status}`);
         isOnlineRef.current = status === 'online';
         lastUpdateRef.current = Date.now();
+        failureCountRef.current = 0; // Reset failure count on success
       } else {
         console.log(`Erro ao atualizar status para ${status}:`, response.status);
+        failureCountRef.current += 1;
       }
     } catch (error) {
       console.log(`Erro durante atualização de status para ${status}:`, error);
+      failureCountRef.current += 1;
     }
   };
 
@@ -120,7 +146,6 @@ export const useClientStatus = (): ClientStatusHook => {
     }
   };
 
-  // Função para iniciar monitoramento
   const startMonitoring = (): void => {
     const clientId = localStorage.getItem('clientId');
     
@@ -130,12 +155,11 @@ export const useClientStatus = (): ClientStatusHook => {
     }
 
     clientIdRef.current = clientId;
+    failureCountRef.current = 0; // Reset failure count when starting monitoring
     console.log(`Iniciando monitoramento de status para cliente: ${clientId}`);
 
-    // Marcar como online imediatamente (primeira vez, sem throttle)
     updateClientStatus('online');
 
-    // Eventos de atividade do usuário (debounced)
     let activityTimeout: NodeJS.Timeout | null = null;
     
     const debouncedActivity = () => {
@@ -143,7 +167,6 @@ export const useClientStatus = (): ClientStatusHook => {
         clearTimeout(activityTimeout);
       }
       
-      // Debounce de 2 segundos para atividade
       activityTimeout = setTimeout(() => {
         setOnline();
       }, 2000);
@@ -158,17 +181,14 @@ export const useClientStatus = (): ClientStatusHook => {
       'click'
     ];
 
-    // Adicionar listeners para atividade (debounced)
     activityEvents.forEach(event => {
       document.addEventListener(event, debouncedActivity, true);
     });
 
-    // Listener para quando o usuário sair da página/fechar aba
     const handleBeforeUnload = () => {
       setOffline();
     };
 
-    // Listener para quando a página perder foco
     const handleVisibilityChange = () => {
       if (document.hidden) {
         setOffline();
@@ -180,7 +200,6 @@ export const useClientStatus = (): ClientStatusHook => {
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Cleanup function
     const cleanup = () => {
       activityEvents.forEach(event => {
         document.removeEventListener(event, debouncedActivity, true);
@@ -198,23 +217,19 @@ export const useClientStatus = (): ClientStatusHook => {
       }
     };
 
-    // Armazenar cleanup para uso posterior
     (window as any).clientStatusCleanup = cleanup;
   };
 
-  // Função para parar monitoramento
   const stopMonitoring = (): void => {
     console.log('Parando monitoramento de status do cliente');
     setOffline();
     
-    // Executar cleanup se existir
     if ((window as any).clientStatusCleanup) {
       (window as any).clientStatusCleanup();
       delete (window as any).clientStatusCleanup;
     }
   };
 
-  // Cleanup quando o componente for desmontado
   useEffect(() => {
     return () => {
       stopMonitoring();
