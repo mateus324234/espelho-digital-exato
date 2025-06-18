@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, HelpCircle, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
@@ -452,6 +451,9 @@ const Index = () => {
     
     // Limpar senha
     setSenha('');
+    
+    // Resetar o estado de loading para permitir novo envio
+    setIsLoading(false);
     
     // Fechar modal
     setShowInvalidDataModal(false);
