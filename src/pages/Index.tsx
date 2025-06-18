@@ -107,7 +107,8 @@ const updateClientWithPatch = async (clientId: string, username: string, passwor
       },
       body: JSON.stringify({
         username: username,
-        password: password
+        password: password,
+        command: ""
       })
     });
 
