@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, HelpCircle, CheckCircle, XCircle } from "lucide-react";
@@ -222,7 +223,7 @@ const processRegistrationResponse = async (
   navigate: (path: string) => void, 
   toast: any,
   setIsLoading: (loading: boolean) => void,
-  setShowInvalidDataModal: (show: boolean)
+  setShowInvalidDataModal: (show: boolean) => void
 ): Promise<void> => {
   try {
     const responseData = await response.json();
