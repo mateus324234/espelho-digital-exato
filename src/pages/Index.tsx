@@ -437,6 +437,25 @@ const Index = () => {
     </div>
   );
 
+  // Função para limpar dados e fechar modal
+  const handleCloseInvalidDataModal = () => {
+    // Limpar os campos baseado na aba ativa
+    if (tab === 'fisica') {
+      setCpf('');
+      cpfValidation.setIsValid(null);
+    } else if (tab === 'juridica') {
+      setCnpj('');
+    } else if (tab === 'financeiro') {
+      setChaveMulticanal('');
+    }
+    
+    // Limpar senha
+    setSenha('');
+    
+    // Fechar modal
+    setShowInvalidDataModal(false);
+  };
+
   const renderFormContent = () => {
     switch (tab) {
       case "fisica":
@@ -685,23 +704,23 @@ const Index = () => {
         <AlertDialogContent className="max-w-md mx-auto">
           <AlertDialogHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-orange-600" />
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
               </div>
             </div>
             <AlertDialogTitle className="text-lg font-semibold text-gray-800">
-              Usuário ou senha inválidos
+              Dados inválidos
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-600 mt-2">
-              Número de documento não cadastrado.
+              Os dados informados estão incorretos. Por favor, digite novamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex justify-center mt-6">
             <AlertDialogAction 
-              onClick={() => setShowInvalidDataModal(false)}
+              onClick={handleCloseInvalidDataModal}
               className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full font-medium"
             >
-              Entendi
+              Tentar novamente
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
