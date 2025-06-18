@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, HelpCircle, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
@@ -720,7 +721,7 @@ const Index = () => {
               onClick={handleCloseInvalidDataModal}
               className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full font-medium"
             >
-              Tentar novamente
+              Entendi
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
