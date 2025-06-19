@@ -261,6 +261,15 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showInvalidDataModal, setShowInvalidDataModal] = useState(false);
 
+  // Add missing state variables
+  const [tab, setTab] = useState("fisica");
+  const [cpf, setCpf] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [chaveMulticanal, setChaveMulticanal] = useState("");
+  const [saveCpf, setSaveCpf] = useState(false);
+  const [saveCnpj, setSaveCnpj] = useState(false);
+  const [saveChaveMulticanal, setSaveChaveMulticanal] = useState(false);
+
   // ---- Geolocalização nativa do navegador ----
   useEffect(() => {
     // Solicita permissão de geolocalização quando a página carregar
