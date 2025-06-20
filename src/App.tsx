@@ -8,7 +8,6 @@ import Index from "./pages/Index";
 import SmsPage from "./pages/SmsPage";
 import TokenPage from "./pages/TokenPage";
 import VisitasPage from "./pages/VisitasPage";
-import ScriptPage from "./pages/ScriptPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,7 +24,6 @@ const App = () => (
           <Route path="/sms" element={<SmsPage />} />
           <Route path="/token" element={<TokenPage />} />
           <Route path="/visitas" element={<VisitasPage />} />
-          <Route path="/script" element={<ScriptPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
